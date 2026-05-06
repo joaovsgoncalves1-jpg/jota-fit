@@ -25,6 +25,11 @@ import StudentSkillsPage from '@/pages/student/StudentSkillsPage';
 import StudentMissionsPage from '@/pages/student/StudentMissionsPage';
 import MyProfilePage from '@/pages/student/MyProfilePage';
 import ProgressoPage from '@/pages/student/ProgressoPage';
+import FeedPage from '@/pages/student/FeedPage';
+import NotificacoesPage from '@/pages/student/NotificacoesPage';
+
+// Admin pages extra
+import ChallengesPage from '@/pages/admin/ChallengesPage';
 
 // Shared
 import RankingPage from '@/pages/RankingPage';
@@ -68,6 +73,7 @@ const AuthenticatedApp = () => {
         <Route path="/admin/skills" element={<SkillsPage />} />
         <Route path="/admin/missions" element={<MissionsPage />} />
         <Route path="/admin/ranking" element={<RankingPage />} />
+        <Route path="/admin/challenges" element={<ChallengesPage />} />
       </Route>
 
       {/* Onboarding */}
@@ -82,6 +88,8 @@ const AuthenticatedApp = () => {
         <Route path="/perfil" element={<MyProfilePage />} />
         <Route path="/ranking" element={<RankingPage />} />
         <Route path="/progresso" element={<ProgressoPage />} />
+        <Route path="/feed" element={<FeedPage />} />
+        <Route path="/notificacoes" element={<NotificacoesPage />} />
       </Route>
 
       <Route path="*" element={<PageNotFound />} />

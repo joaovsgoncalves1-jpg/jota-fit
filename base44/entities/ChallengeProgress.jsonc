@@ -1,0 +1,28 @@
+{
+  "name": "ChallengeProgress",
+  "type": "object",
+  "properties": {
+    "challenge_id": {
+      "type": "string"
+    },
+    "student_email": {
+      "type": "string"
+    },
+    "current_value": {
+      "type": "number",
+      "default": 0
+    },
+    "completed": {
+      "type": "boolean",
+      "default": false
+    },
+    "completed_date": {
+      "type": "string",
+      "format": "date"
+    }
+  },
+  "required": [
+    "challenge_id",
+    "student_email"
+  ]
+}

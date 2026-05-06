@@ -1,8 +1,9 @@
 import React, { useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
-  User, CheckCircle, Dumbbell, TreePine, Trophy, Target, Flame, TrendingUp
+  User, CheckCircle, Dumbbell, TreePine, Trophy, Target, Flame, TrendingUp, Users
 } from 'lucide-react';
+import NotificationBell from '@/components/notifications/NotificationBell';
 import { useCurrentUser } from '@/lib/useCurrentUser';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -11,9 +12,9 @@ import { calculateLevel } from '@/lib/gamification';
 const NAV_ITEMS = [
   { path: '/', label: 'Check-in', icon: CheckCircle },
   { path: '/treinos', label: 'Treinos', icon: Dumbbell },
+  { path: '/feed', label: 'Feed', icon: Users },
   { path: '/skills', label: 'Skills', icon: TreePine },
   { path: '/progresso', label: 'Progresso', icon: TrendingUp },
-  { path: '/ranking', label: 'Ranking', icon: Trophy },
   { path: '/perfil', label: 'Perfil', icon: User },
 ];
 
@@ -49,7 +50,8 @@ export default function StudentLayout() {
             </div>
             <span className="font-display text-sm font-bold tracking-wider">JOTA FIT</span>
           </Link>
-          <div className="flex items-center gap-3 text-xs">
+          <div className="flex items-center gap-2 text-xs">
+            <NotificationBell />
             <div className="flex items-center gap-1.5 bg-gold/10 text-gold px-2.5 py-1 rounded-full font-bold">
               <span>⚡</span>
               <span>{myProfile?.xp_total || 0} XP</span>

@@ -1,0 +1,40 @@
+{
+  "name": "Post",
+  "type": "object",
+  "properties": {
+    "student_email": {
+      "type": "string",
+      "description": "Email do aluno"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "URL da imagem"
+    },
+    "caption": {
+      "type": "string",
+      "description": "Legenda do post"
+    },
+    "workout_id": {
+      "type": "string",
+      "description": "ID do treino associado"
+    },
+    "likes_count": {
+      "type": "number",
+      "default": 0
+    },
+    "comments_count": {
+      "type": "number",
+      "default": 0
+    },
+    "liked_by": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Emails que curtiram"
+    }
+  },
+  "required": [
+    "student_email"
+  ]
+}
