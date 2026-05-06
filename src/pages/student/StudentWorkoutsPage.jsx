@@ -4,12 +4,14 @@ import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/lib/useCurrentUser';
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Dumbbell, CheckCircle, ChevronDown, ChevronUp, Clock } from 'lucide-react';
+import { Dumbbell, CheckCircle, ChevronDown, ChevronUp, Clock, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import HPBar from '@/components/game/HPBar';
 import XPBadge from '@/components/game/XPBadge';
 import VictoryAnimation from '@/components/game/VictoryAnimation';
+import WorkoutTimer from '@/components/workout/WorkoutTimer';
+import ExerciseModal from '@/components/workout/ExerciseModal';
 
 export default function StudentWorkoutsPage() {
   const { user } = useCurrentUser();
@@ -18,6 +20,9 @@ export default function StudentWorkoutsPage() {
   const [showXP, setShowXP] = useState(false);
   const [xpAmount, setXpAmount] = useState(0);
   const [victory, setVictory] = useState(null);
+  const [activeTimerAssignment, setActiveTimerAssignment] = useState(null);
+  const [exerciseModal, setExerciseModal] = useState(null); // exercise object
+  const [exercises, setExercises] = useState({}); // keyed by exercise_id
   const today = format(new Date(), 'yyyy-MM-dd');
 
   const { data: assignments } = useQuery({
@@ -59,6 +64,11 @@ export default function StudentWorkoutsPage() {
     queryFn: () => base44.entities.Skill.list(),
   });
 
+  const { data: allExercises } = useQuery({
+    queryKey: ['all-exercises'],
+    queryFn: () => base44.entities.Exercise.list(),
+  });
+
   const myProfile = profile?.[0];
   const todayLogs = workoutLogs?.filter(l => l.completion_date === today) || [];
   const completedWorkoutIds = new Set(todayLogs.map(l => l.workout_id));
@@ -76,7 +86,8 @@ export default function StudentWorkoutsPage() {
       const workout = workouts?.find(w => w.id === assignment.workout_id);
       if (!workout) return;
 
-      const xpReward = workout.xp_reward || 100;
+      const timerXP = assignment._timerXP || 0;
+      const xpReward = (workout.xp_reward || 100) + timerXP;
       const damage = workout.boss_damage || 0;
 
       // Find current active boss for this workout's skill
@@ -179,6 +190,11 @@ export default function StudentWorkoutsPage() {
 
   return (
     <div className="p-4 max-w-lg mx-auto space-y-4">
+      <ExerciseModal
+        exercise={exerciseModal}
+        open={!!exerciseModal}
+        onClose={() => setExerciseModal(null)}
+      />
       <XPBadge amount={xpAmount} show={showXP} />
       <VictoryAnimation
         show={!!victory}
@@ -283,33 +299,70 @@ export default function StudentWorkoutsPage() {
                           </div>
                         )}
 
+                        {/* Timer */}
+                        {activeTimerAssignment === assignment.id ? (
+                          <WorkoutTimer
+                            exercises={workout.exercises || []}
+                            onStart={() => {}}
+                            onFinish={({ durationMinutes, xpBonus }) => {
+                              setActiveTimerAssignment(null);
+                              completeWorkoutMutation.mutate({ ...assignment, _timerXP: xpBonus, _durationMin: durationMinutes });
+                            }}
+                          />
+                        ) : null}
+
                         {/* Exercises */}
                         {workout.exercises && workout.exercises.length > 0 && (
                           <div className="space-y-2">
-                            {workout.exercises.map((ex, i) => (
-                              <div key={i} className="flex items-center gap-3 bg-muted/30 rounded-lg px-3 py-2">
-                                <span className="text-xs font-display font-bold text-primary w-6">{i + 1}</span>
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium text-foreground">{ex.name}</p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {ex.sets && `${ex.sets}x`}{ex.reps || ''} 
-                                    {ex.rest_seconds ? ` • ${ex.rest_seconds}s desc.` : ''}
-                                  </p>
+                            {workout.exercises.map((ex, i) => {
+                              const exData = allExercises?.find(e => e.id === ex.exercise_id) || ex;
+                              const hasDetail = !!exData?.description || !!exData?.video_url || !!exData?.tips;
+                              return (
+                                <div
+                                  key={i}
+                                  className={`flex items-center gap-3 bg-muted/30 rounded-lg px-3 py-2 ${hasDetail ? 'cursor-pointer hover:bg-muted/50' : ''}`}
+                                  onClick={() => hasDetail && setExerciseModal(exData)}
+                                >
+                                  <span className="text-xs font-display font-bold text-primary w-6">{i + 1}</span>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-foreground">{exData.name}</p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {ex.sets && `${ex.sets}x`}{ex.reps || ''}
+                                      {ex.rest_seconds ? ` • ${ex.rest_seconds}s desc.` : ''}
+                                    </p>
+                                  </div>
+                                  {hasDetail && <Info className="w-3.5 h-3.5 text-muted-foreground shrink-0" />}
                                 </div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         )}
 
                         {/* Complete button */}
-                        {!completed && (
+                        {!completed && !activeTimerAssignment && (
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={() => setActiveTimerAssignment(assignment.id)}
+                              variant="outline"
+                              className="flex-1 border-primary/30 text-primary hover:bg-primary/10 font-bold py-5 rounded-xl"
+                            >
+                              ⏱ Iniciar com Timer
+                            </Button>
+                            <Button
+                              onClick={() => completeWorkoutMutation.mutate(assignment)}
+                              disabled={completeWorkoutMutation.isPending}
+                              className="flex-1 bg-primary hover:bg-primary/90 font-bold py-5 rounded-xl"
+                            >
+                              {completeWorkoutMutation.isPending ? '...' : '✅ Concluído'}
+                            </Button>
+                          </div>
+                        )}
+                        {completed && activeTimerAssignment === assignment.id && (
                           <Button
-                            onClick={() => completeWorkoutMutation.mutate(assignment)}
-                            disabled={completeWorkoutMutation.isPending}
-                            className="w-full bg-primary hover:bg-primary/90 font-bold py-6 text-base rounded-xl"
-                          >
-                            {completeWorkoutMutation.isPending ? 'Registrando...' : '✅ TREINO CONCLUÍDO'}
-                          </Button>
+                            onClick={() => setActiveTimerAssignment(null)}
+                            variant="outline"
+                            className="w-full"
+                          >Fechar timer</Button>
                         )}
                       </div>
                     </motion.div>

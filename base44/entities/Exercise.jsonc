@@ -1,0 +1,56 @@
+{
+  "name": "Exercise",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nome do exerc\u00edcio"
+    },
+    "description": {
+      "type": "string",
+      "description": "Descri\u00e7\u00e3o detalhada"
+    },
+    "muscle_groups": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Grupos musculares trabalhados"
+    },
+    "video_url": {
+      "type": "string",
+      "description": "URL do YouTube ou v\u00eddeo"
+    },
+    "difficulty": {
+      "type": "string",
+      "enum": [
+        "beginner",
+        "intermediate",
+        "advanced"
+      ],
+      "description": "N\u00edvel de dificuldade"
+    },
+    "equipment_needed": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Equipamentos necess\u00e1rios"
+    },
+    "tips": {
+      "type": "string",
+      "description": "Dicas de execu\u00e7\u00e3o"
+    },
+    "sets_recommended": {
+      "type": "string",
+      "description": "Ex: 3x12-15"
+    },
+    "rest_seconds": {
+      "type": "number",
+      "description": "Tempo de descanso sugerido em segundos"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}
