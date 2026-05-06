@@ -1,0 +1,23 @@
+{
+  "name": "Checkin",
+  "type": "object",
+  "properties": {
+    "student_email": {
+      "type": "string",
+      "description": "Email do aluno"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data do check-in"
+    },
+    "xp_earned": {
+      "type": "number",
+      "description": "XP ganho no check-in"
+    }
+  },
+  "required": [
+    "student_email",
+    "date"
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "name": "WorkoutAssignment",
+  "type": "object",
+  "properties": {
+    "workout_id": {
+      "type": "string",
+      "description": "ID do treino"
+    },
+    "student_email": {
+      "type": "string",
+      "description": "Email do aluno"
+    },
+    "scheduled_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data prevista"
+    },
+    "recurring": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se \u00e9 recorrente"
+    },
+    "recurring_days": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "mon",
+          "tue",
+          "wed",
+          "thu",
+          "fri",
+          "sat",
+          "sun"
+        ]
+      },
+      "description": "Dias da semana (se recorrente)"
+    }
+  },
+  "required": [
+    "workout_id",
+    "student_email"
+  ]
+}

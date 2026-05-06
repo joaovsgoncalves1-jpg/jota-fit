@@ -1,0 +1,32 @@
+{
+  "name": "BossProgress",
+  "type": "object",
+  "properties": {
+    "student_email": {
+      "type": "string",
+      "description": "Email do aluno"
+    },
+    "boss_id": {
+      "type": "string",
+      "description": "ID do chefe"
+    },
+    "current_hp": {
+      "type": "number",
+      "description": "HP atual do chefe"
+    },
+    "defeated": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se foi derrotado"
+    },
+    "defeated_date": {
+      "type": "string",
+      "format": "date"
+    }
+  },
+  "required": [
+    "student_email",
+    "boss_id",
+    "current_hp"
+  ]
+}

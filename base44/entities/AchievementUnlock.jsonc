@@ -1,0 +1,22 @@
+{
+  "name": "AchievementUnlock",
+  "type": "object",
+  "properties": {
+    "achievement_id": {
+      "type": "string",
+      "description": "ID da conquista"
+    },
+    "student_email": {
+      "type": "string",
+      "description": "Email do aluno"
+    },
+    "unlocked_date": {
+      "type": "string",
+      "format": "date"
+    }
+  },
+  "required": [
+    "achievement_id",
+    "student_email"
+  ]
+}

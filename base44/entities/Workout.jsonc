@@ -1,0 +1,55 @@
+{
+  "name": "Workout",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nome do treino"
+    },
+    "description": {
+      "type": "string",
+      "description": "Descri\u00e7\u00e3o do treino"
+    },
+    "skill_id": {
+      "type": "string",
+      "description": "ID da skill associada"
+    },
+    "boss_damage": {
+      "type": "number",
+      "default": 25,
+      "description": "Dano causado ao chefe"
+    },
+    "xp_reward": {
+      "type": "number",
+      "default": 100,
+      "description": "XP ao concluir"
+    },
+    "exercises": {
+      "type": "array",
+      "description": "Lista de exerc\u00edcios",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "sets": {
+            "type": "number"
+          },
+          "reps": {
+            "type": "string"
+          },
+          "rest_seconds": {
+            "type": "number"
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

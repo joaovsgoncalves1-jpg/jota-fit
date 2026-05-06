@@ -1,0 +1,23 @@
+{
+  "name": "LevelConfig",
+  "type": "object",
+  "properties": {
+    "level": {
+      "type": "number",
+      "description": "N\u00famero do n\u00edvel"
+    },
+    "title": {
+      "type": "string",
+      "description": "T\u00edtulo do n\u00edvel (ex: Guerreiro)"
+    },
+    "xp_threshold": {
+      "type": "number",
+      "description": "XP m\u00ednimo para este n\u00edvel"
+    }
+  },
+  "required": [
+    "level",
+    "title",
+    "xp_threshold"
+  ]
+}

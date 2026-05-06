@@ -1,0 +1,46 @@
+{
+  "name": "StudentProfile",
+  "type": "object",
+  "properties": {
+    "email": {
+      "type": "string",
+      "description": "Email do aluno"
+    },
+    "name": {
+      "type": "string",
+      "description": "Nome do aluno"
+    },
+    "avatar_url": {
+      "type": "string",
+      "description": "URL do avatar"
+    },
+    "xp_total": {
+      "type": "number",
+      "default": 0,
+      "description": "XP total acumulado"
+    },
+    "current_streak": {
+      "type": "number",
+      "default": 0,
+      "description": "Streak atual em dias"
+    },
+    "max_streak": {
+      "type": "number",
+      "default": 0,
+      "description": "Maior streak alcan\u00e7ado"
+    },
+    "last_checkin_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data do \u00faltimo check-in"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "email",
+    "name"
+  ]
+}

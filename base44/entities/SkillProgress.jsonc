@@ -1,0 +1,36 @@
+{
+  "name": "SkillProgress",
+  "type": "object",
+  "properties": {
+    "student_email": {
+      "type": "string",
+      "description": "Email do aluno"
+    },
+    "skill_id": {
+      "type": "string",
+      "description": "ID da skill"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "locked",
+        "in_progress",
+        "completed"
+      ],
+      "default": "locked",
+      "description": "Status da skill"
+    },
+    "started_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "completed_date": {
+      "type": "string",
+      "format": "date"
+    }
+  },
+  "required": [
+    "student_email",
+    "skill_id"
+  ]
+}
