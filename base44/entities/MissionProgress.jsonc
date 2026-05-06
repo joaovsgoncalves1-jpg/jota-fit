@@ -1,0 +1,31 @@
+{
+  "name": "MissionProgress",
+  "type": "object",
+  "properties": {
+    "mission_id": {
+      "type": "string",
+      "description": "ID da miss\u00e3o"
+    },
+    "student_email": {
+      "type": "string",
+      "description": "Email do aluno"
+    },
+    "current_progress": {
+      "type": "number",
+      "default": 0,
+      "description": "Progresso atual"
+    },
+    "completed": {
+      "type": "boolean",
+      "default": false
+    },
+    "completed_date": {
+      "type": "string",
+      "format": "date"
+    }
+  },
+  "required": [
+    "mission_id",
+    "student_email"
+  ]
+}

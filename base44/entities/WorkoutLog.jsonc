@@ -1,0 +1,36 @@
+{
+  "name": "WorkoutLog",
+  "type": "object",
+  "properties": {
+    "workout_id": {
+      "type": "string",
+      "description": "ID do treino"
+    },
+    "student_email": {
+      "type": "string",
+      "description": "Email do aluno"
+    },
+    "completion_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data de conclus\u00e3o"
+    },
+    "xp_earned": {
+      "type": "number",
+      "description": "XP ganho"
+    },
+    "damage_dealt": {
+      "type": "number",
+      "description": "Dano causado ao chefe"
+    },
+    "boss_id": {
+      "type": "string",
+      "description": "ID do chefe que recebeu dano"
+    }
+  },
+  "required": [
+    "workout_id",
+    "student_email",
+    "completion_date"
+  ]
+}

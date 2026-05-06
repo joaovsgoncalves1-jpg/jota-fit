@@ -1,0 +1,47 @@
+{
+  "name": "Skill",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nome da skill"
+    },
+    "description": {
+      "type": "string",
+      "description": "Descri\u00e7\u00e3o da skill"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "forca",
+        "mobilidade",
+        "equilibrio",
+        "resistencia",
+        "potencia",
+        "flexibilidade"
+      ],
+      "description": "Categoria da skill"
+    },
+    "icon": {
+      "type": "string",
+      "description": "Nome do \u00edcone"
+    },
+    "order": {
+      "type": "number",
+      "description": "Ordem na \u00e1rvore"
+    },
+    "prerequisite_skill_id": {
+      "type": "string",
+      "description": "ID da skill pr\u00e9-requisito"
+    },
+    "xp_bonus": {
+      "type": "number",
+      "default": 200,
+      "description": "XP b\u00f4nus ao concluir"
+    }
+  },
+  "required": [
+    "name",
+    "category"
+  ]
+}
