@@ -1,0 +1,24 @@
+{
+  "name": "StudentPathProgress",
+  "type": "object",
+  "properties": {
+    "student_email": {
+      "type": "string"
+    },
+    "path_id": {
+      "type": "string"
+    },
+    "started_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "student_email",
+    "path_id"
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "name": "Plan",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "enum": [
+        "free",
+        "pro",
+        "premium"
+      ]
+    },
+    "display_name": {
+      "type": "string"
+    },
+    "price_monthly": {
+      "type": "number"
+    },
+    "price_yearly": {
+      "type": "number"
+    },
+    "features": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "max_workouts_week": {
+      "type": "number",
+      "default": 3
+    },
+    "has_missions_premium": {
+      "type": "boolean",
+      "default": false
+    },
+    "has_body_measurement": {
+      "type": "boolean",
+      "default": false
+    },
+    "has_personalized_training": {
+      "type": "boolean",
+      "default": false
+    },
+    "has_weekly_feedback": {
+      "type": "boolean",
+      "default": false
+    },
+    "stripe_price_id_monthly": {
+      "type": "string"
+    },
+    "stripe_price_id_yearly": {
+      "type": "string"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "name",
+    "display_name"
+  ]
+}

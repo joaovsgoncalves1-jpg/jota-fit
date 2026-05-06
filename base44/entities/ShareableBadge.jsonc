@@ -1,0 +1,39 @@
+{
+  "name": "ShareableBadge",
+  "type": "object",
+  "properties": {
+    "student_email": {
+      "type": "string"
+    },
+    "achievement_id": {
+      "type": "string"
+    },
+    "achievement_name": {
+      "type": "string"
+    },
+    "achievement_emoji": {
+      "type": "string"
+    },
+    "student_name": {
+      "type": "string"
+    },
+    "image_url": {
+      "type": "string"
+    },
+    "share_text": {
+      "type": "string"
+    },
+    "shared": {
+      "type": "boolean",
+      "default": false
+    },
+    "shared_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "student_email",
+    "achievement_name"
+  ]
+}

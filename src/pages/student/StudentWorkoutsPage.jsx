@@ -5,6 +5,7 @@ import { useCurrentUser } from '@/lib/useCurrentUser';
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Dumbbell, CheckCircle, ChevronDown, ChevronUp, Clock, Info } from 'lucide-react';
+import AIJotaButton from '@/components/student/AIJotaButton';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import HPBar from '@/components/game/HPBar';
@@ -204,9 +205,12 @@ export default function StudentWorkoutsPage() {
         onClose={() => setVictory(null)}
       />
 
-      <div className="flex items-center gap-2 mb-2">
-        <Dumbbell className="w-5 h-5 text-primary" />
-        <h1 className="font-display text-lg font-bold">TREINOS DO DIA</h1>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <Dumbbell className="w-5 h-5 text-primary" />
+          <h1 className="font-display text-lg font-bold">TREINOS DO DIA</h1>
+        </div>
+        <AIJotaButton profile={myProfile} skills={skills} skillProgress={[]} workoutLogs={workoutLogs} workouts={workouts} />
       </div>
 
       {todayAssignments.length === 0 ? (
