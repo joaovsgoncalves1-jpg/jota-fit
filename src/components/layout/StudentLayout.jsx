@@ -1,5 +1,5 @@
-import React from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   User, CheckCircle, Dumbbell, TreePine, Trophy, Target, Flame
 } from 'lucide-react';
@@ -9,19 +9,19 @@ import { base44 } from '@/api/base44Client';
 import { calculateLevel } from '@/lib/gamification';
 
 const NAV_ITEMS = [
-  { path: '/meu-perfil', label: 'Perfil', icon: User },
-  { path: '/checkin', label: 'Check-in', icon: CheckCircle },
+  { path: '/', label: 'Check-in', icon: CheckCircle },
   { path: '/treinos', label: 'Treinos', icon: Dumbbell },
   { path: '/skills', label: 'Skills', icon: TreePine },
   { path: '/ranking', label: 'Ranking', icon: Trophy },
-  { path: '/missoes', label: 'Missões', icon: Target },
+  { path: '/perfil', label: 'Perfil', icon: User },
 ];
 
 export default function StudentLayout() {
   const location = useLocation();
-  const { user } = useCurrentUser();
+  const navigate = useNavigate();
+  const { user, isLoading } = useCurrentUser();
 
-  const { data: profile } = useQuery({
+  const { data: profile, isLoading: loadingProfile } = useQuery({
     queryKey: ['my-profile', user?.email],
     queryFn: () => base44.entities.StudentProfile.filter({ email: user?.email }),
     enabled: !!user?.email,
@@ -30,12 +30,19 @@ export default function StudentLayout() {
   const myProfile = profile?.[0];
   const levelInfo = calculateLevel(myProfile?.xp_total || 0);
 
+  // Redirect to onboarding if no profile exists
+  useEffect(() => {
+    if (!loadingProfile && profile && profile.length === 0 && user?.role !== 'admin') {
+      navigate('/onboarding');
+    }
+  }, [loadingProfile, profile, user]);
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Top Bar */}
       <header className="sticky top-0 z-30 bg-card/80 backdrop-blur-xl border-b border-border px-4 py-3">
         <div className="flex items-center justify-between max-w-lg mx-auto">
-          <Link to="/meu-perfil" className="flex items-center gap-2">
+          <Link to="/" className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
               <Flame className="w-5 h-5 text-primary-foreground" />
             </div>
@@ -69,7 +76,7 @@ export default function StudentLayout() {
         <div className="flex justify-around py-2 px-1 max-w-lg mx-auto">
           {NAV_ITEMS.map(item => {
             const Icon = item.icon;
-            const active = location.pathname === item.path;
+            const active = item.path === '/' ? location.pathname === '/' : location.pathname.startsWith(item.path);
             return (
               <Link
                 key={item.path}
