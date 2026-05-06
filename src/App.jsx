@@ -24,6 +24,7 @@ import StudentWorkoutsPage from '@/pages/student/StudentWorkoutsPage';
 import StudentSkillsPage from '@/pages/student/StudentSkillsPage';
 import StudentMissionsPage from '@/pages/student/StudentMissionsPage';
 import MyProfilePage from '@/pages/student/MyProfilePage';
+import ProgressoPage from '@/pages/student/ProgressoPage';
 
 // Shared
 import RankingPage from '@/pages/RankingPage';
@@ -80,6 +81,7 @@ const AuthenticatedApp = () => {
         <Route path="/missoes" element={<StudentMissionsPage />} />
         <Route path="/perfil" element={<MyProfilePage />} />
         <Route path="/ranking" element={<RankingPage />} />
+        <Route path="/progresso" element={<ProgressoPage />} />
       </Route>
 
       <Route path="*" element={<PageNotFound />} />

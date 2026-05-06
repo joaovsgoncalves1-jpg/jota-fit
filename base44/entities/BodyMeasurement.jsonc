@@ -1,0 +1,47 @@
+{
+  "name": "BodyMeasurement",
+  "type": "object",
+  "properties": {
+    "student_email": {
+      "type": "string",
+      "description": "Email do aluno"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data da medi\u00e7\u00e3o"
+    },
+    "weight_kg": {
+      "type": "number",
+      "description": "Peso em kg"
+    },
+    "body_fat_pct": {
+      "type": "number",
+      "description": "Percentual de gordura corporal"
+    },
+    "arm_circumference": {
+      "type": "number",
+      "description": "Circunfer\u00eancia do b\u00edceps em cm"
+    },
+    "leg_circumference": {
+      "type": "number",
+      "description": "Circunfer\u00eancia da coxa em cm"
+    },
+    "chest_circumference": {
+      "type": "number",
+      "description": "Circunfer\u00eancia do peito em cm"
+    },
+    "waist_circumference": {
+      "type": "number",
+      "description": "Circunfer\u00eancia da cintura em cm"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notas opcionais"
+    }
+  },
+  "required": [
+    "student_email",
+    "date"
+  ]
+}

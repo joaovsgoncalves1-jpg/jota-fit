@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
-  User, CheckCircle, Dumbbell, TreePine, Trophy, Target, Flame
+  User, CheckCircle, Dumbbell, TreePine, Trophy, Target, Flame, TrendingUp
 } from 'lucide-react';
 import { useCurrentUser } from '@/lib/useCurrentUser';
 import { useQuery } from '@tanstack/react-query';
@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { path: '/', label: 'Check-in', icon: CheckCircle },
   { path: '/treinos', label: 'Treinos', icon: Dumbbell },
   { path: '/skills', label: 'Skills', icon: TreePine },
+  { path: '/progresso', label: 'Progresso', icon: TrendingUp },
   { path: '/ranking', label: 'Ranking', icon: Trophy },
   { path: '/perfil', label: 'Perfil', icon: User },
 ];
