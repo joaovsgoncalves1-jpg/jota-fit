@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
-  User, CheckCircle, Dumbbell, TreePine, Trophy, Target, Flame, TrendingUp, Users
+  User, CheckCircle, Dumbbell, TreePine, Trophy, Target, Flame, TrendingUp, Users, Route
 } from 'lucide-react';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { useCurrentUser } from '@/lib/useCurrentUser';
@@ -12,9 +12,9 @@ import { calculateLevel } from '@/lib/gamification';
 const NAV_ITEMS = [
   { path: '/', label: 'Check-in', icon: CheckCircle },
   { path: '/treinos', label: 'Treinos', icon: Dumbbell },
+  { path: '/trilhas', label: 'Trilhas', icon: Route },
   { path: '/feed', label: 'Feed', icon: Users },
   { path: '/skills', label: 'Skills', icon: TreePine },
-  { path: '/progresso', label: 'Progresso', icon: TrendingUp },
   { path: '/perfil', label: 'Perfil', icon: User },
 ];
 

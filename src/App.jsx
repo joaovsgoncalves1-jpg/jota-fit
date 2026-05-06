@@ -27,6 +27,7 @@ import MyProfilePage from '@/pages/student/MyProfilePage';
 import ProgressoPage from '@/pages/student/ProgressoPage';
 import FeedPage from '@/pages/student/FeedPage';
 import NotificacoesPage from '@/pages/student/NotificacoesPage';
+import TrilhasPage from '@/pages/student/TrilhasPage';
 
 // Admin pages extra
 import ChallengesPage from '@/pages/admin/ChallengesPage';
@@ -34,6 +35,8 @@ import ChallengesPage from '@/pages/admin/ChallengesPage';
 // Shared
 import RankingPage from '@/pages/RankingPage';
 import OnboardingPage from '@/pages/OnboardingPage';
+import LandingPage from '@/pages/LandingPage';
+import PlanosPage from '@/pages/PlanosPage';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin, user: currentUser } = useAuth();
@@ -76,6 +79,10 @@ const AuthenticatedApp = () => {
         <Route path="/admin/challenges" element={<ChallengesPage />} />
       </Route>
 
+      {/* Public pages */}
+      <Route path="/landing" element={<LandingPage />} />
+      <Route path="/planos" element={<PlanosPage />} />
+
       {/* Onboarding */}
       <Route path="/onboarding" element={<OnboardingPage />} />
 
@@ -90,6 +97,7 @@ const AuthenticatedApp = () => {
         <Route path="/progresso" element={<ProgressoPage />} />
         <Route path="/feed" element={<FeedPage />} />
         <Route path="/notificacoes" element={<NotificacoesPage />} />
+        <Route path="/trilhas" element={<TrilhasPage />} />
       </Route>
 
       <Route path="*" element={<PageNotFound />} />

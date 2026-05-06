@@ -1,0 +1,41 @@
+{
+  "name": "LearningPath",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "emoji": {
+      "type": "string"
+    },
+    "difficulty": {
+      "type": "string",
+      "enum": [
+        "beginner",
+        "intermediate",
+        "advanced",
+        "hybrid"
+      ]
+    },
+    "skills_order": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "estimated_weeks": {
+      "type": "number"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "name",
+    "difficulty"
+  ]
+}

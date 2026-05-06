@@ -1,0 +1,42 @@
+{
+  "name": "InstructorProfile",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "full_name": {
+      "type": "string"
+    },
+    "bio": {
+      "type": "string"
+    },
+    "specialties": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "philosophy": {
+      "type": "string"
+    },
+    "manifesto": {
+      "type": "string"
+    },
+    "training_methods": {
+      "type": "object"
+    },
+    "avatar_url": {
+      "type": "string"
+    },
+    "instagram": {
+      "type": "string"
+    },
+    "contact_email": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

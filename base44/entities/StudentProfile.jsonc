@@ -3,36 +3,29 @@
   "type": "object",
   "properties": {
     "email": {
-      "type": "string",
-      "description": "Email do aluno"
+      "type": "string"
     },
     "name": {
-      "type": "string",
-      "description": "Nome do aluno"
+      "type": "string"
     },
     "avatar_url": {
-      "type": "string",
-      "description": "URL do avatar"
+      "type": "string"
     },
     "xp_total": {
       "type": "number",
-      "default": 0,
-      "description": "XP total acumulado"
+      "default": 0
     },
     "current_streak": {
       "type": "number",
-      "default": 0,
-      "description": "Streak atual em dias"
+      "default": 0
     },
     "max_streak": {
       "type": "number",
-      "default": 0,
-      "description": "Maior streak alcan\u00e7ado"
+      "default": 0
     },
     "last_checkin_date": {
       "type": "string",
-      "format": "date",
-      "description": "Data do \u00faltimo check-in"
+      "format": "date"
     },
     "active": {
       "type": "boolean",
@@ -44,39 +37,51 @@
         "beginner",
         "intermediate",
         "advanced"
-      ],
-      "description": "N\u00edvel de aptid\u00e3o f\u00edsica"
+      ]
     },
     "goals": {
       "type": "array",
       "items": {
         "type": "string"
-      },
-      "description": "Objetivos do aluno"
+      }
     },
     "training_days": {
       "type": "array",
       "items": {
         "type": "string"
-      },
-      "description": "Dias da semana de treino"
+      }
     },
     "preferred_time": {
-      "type": "string",
-      "description": "Hor\u00e1rio preferido de treino"
+      "type": "string"
     },
     "weight_kg": {
-      "type": "number",
-      "description": "Peso atual em kg"
+      "type": "number"
     },
     "target_weight_kg": {
-      "type": "number",
-      "description": "Peso objetivo em kg"
+      "type": "number"
     },
     "onboarding_completed": {
       "type": "boolean",
-      "default": false,
-      "description": "Onboarding conclu\u00eddo"
+      "default": false
+    },
+    "plan_type": {
+      "type": "string",
+      "enum": [
+        "free",
+        "pro",
+        "premium"
+      ],
+      "default": "free"
+    },
+    "plan_expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "stripe_customer_id": {
+      "type": "string"
+    },
+    "stripe_subscription_id": {
+      "type": "string"
     }
   },
   "required": [

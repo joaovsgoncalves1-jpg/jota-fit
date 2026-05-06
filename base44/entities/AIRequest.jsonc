@@ -1,0 +1,34 @@
+{
+  "name": "AIRequest",
+  "type": "object",
+  "properties": {
+    "student_email": {
+      "type": "string"
+    },
+    "request_text": {
+      "type": "string"
+    },
+    "ai_response": {
+      "type": "string"
+    },
+    "manual_response": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "ai_answered",
+        "manual_answered"
+      ],
+      "default": "pending"
+    },
+    "is_premium": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "student_email"
+  ]
+}
