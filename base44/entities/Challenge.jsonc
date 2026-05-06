@@ -1,0 +1,56 @@
+{
+  "name": "Challenge",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nome do desafio"
+    },
+    "description": {
+      "type": "string"
+    },
+    "exercise_type": {
+      "type": "string"
+    },
+    "target_value": {
+      "type": "number"
+    },
+    "target_unit": {
+      "type": "string",
+      "enum": [
+        "reps",
+        "seconds",
+        "days",
+        "minutes"
+      ]
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "xp_reward": {
+      "type": "number",
+      "default": 200
+    },
+    "badge_icon": {
+      "type": "string",
+      "default": "\ud83c\udfc5"
+    },
+    "created_by": {
+      "type": "string"
+    },
+    "participants_count": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "name",
+    "start_date",
+    "end_date"
+  ]
+}

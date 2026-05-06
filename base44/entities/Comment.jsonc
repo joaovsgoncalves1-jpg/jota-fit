@@ -1,0 +1,23 @@
+{
+  "name": "Comment",
+  "type": "object",
+  "properties": {
+    "post_id": {
+      "type": "string",
+      "description": "ID do post"
+    },
+    "student_email": {
+      "type": "string",
+      "description": "Email do aluno"
+    },
+    "text": {
+      "type": "string",
+      "description": "Texto do coment\u00e1rio"
+    }
+  },
+  "required": [
+    "post_id",
+    "student_email",
+    "text"
+  ]
+}
