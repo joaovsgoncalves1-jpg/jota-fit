@@ -27,6 +27,7 @@ import MyProfilePage from '@/pages/student/MyProfilePage';
 
 // Shared
 import RankingPage from '@/pages/RankingPage';
+import OnboardingPage from '@/pages/OnboardingPage';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin, user: currentUser } = useAuth();
@@ -67,6 +68,9 @@ const AuthenticatedApp = () => {
         <Route path="/admin/missions" element={<MissionsPage />} />
         <Route path="/admin/ranking" element={<RankingPage />} />
       </Route>
+
+      {/* Onboarding */}
+      <Route path="/onboarding" element={<OnboardingPage />} />
 
       {/* Student routes */}
       <Route element={<StudentLayout />}>
