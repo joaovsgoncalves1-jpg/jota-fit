@@ -1,0 +1,76 @@
+{
+  "name": "WorkoutSession",
+  "type": "object",
+  "properties": {
+    "student_email": {
+      "type": "string",
+      "description": "Email do aluno"
+    },
+    "routine_id": {
+      "type": "string",
+      "description": "ID da rotina"
+    },
+    "routine_name": {
+      "type": "string",
+      "description": "Nome da rotina (snapshot)"
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "In\u00edcio do treino"
+    },
+    "finished_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fim do treino"
+    },
+    "duration_minutes": {
+      "type": "number",
+      "description": "Dura\u00e7\u00e3o em minutos"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "in_progress",
+        "completed",
+        "cancelled"
+      ],
+      "default": "completed"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Observa\u00e7\u00f5es do treino"
+    },
+    "total_volume_kg": {
+      "type": "number",
+      "description": "Volume total em kg"
+    },
+    "exercises_completed": {
+      "type": "number",
+      "description": "Exerc\u00edcios conclu\u00eddos"
+    },
+    "sets_completed": {
+      "type": "number",
+      "description": "S\u00e9ries conclu\u00eddas"
+    },
+    "xp_earned": {
+      "type": "number",
+      "description": "XP ganho"
+    },
+    "prs_count": {
+      "type": "number",
+      "default": 0,
+      "description": "PRs batidos"
+    },
+    "prs_detail": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "description": "Detalhe dos PRs"
+    }
+  },
+  "required": [
+    "student_email"
+  ]
+}

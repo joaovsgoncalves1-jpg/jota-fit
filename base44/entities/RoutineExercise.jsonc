@@ -19,17 +19,51 @@
       "type": "number",
       "description": "N\u00famero de s\u00e9ries"
     },
+    "target_reps": {
+      "type": "string",
+      "description": "Reps alvo (ex: 8-12)"
+    },
     "reps": {
       "type": "string",
-      "description": "Repeti\u00e7\u00f5es (ex: 8-12)"
+      "description": "Reps (alias legado)"
+    },
+    "target_weight_kg": {
+      "type": "number",
+      "description": "Carga alvo em kg"
+    },
+    "target_duration_seconds": {
+      "type": "number",
+      "description": "Dura\u00e7\u00e3o alvo em segundos"
     },
     "rest_seconds": {
       "type": "number",
       "description": "Descanso em segundos"
     },
+    "band_assistance_level": {
+      "type": "string",
+      "enum": [
+        "leve",
+        "medio",
+        "forte",
+        "muito_forte"
+      ],
+      "description": "N\u00edvel de el\u00e1stico planejado"
+    },
+    "unilateral": {
+      "type": "boolean",
+      "default": false
+    },
     "notes": {
       "type": "string",
-      "description": "Observa\u00e7\u00f5es do exerc\u00edcio"
+      "description": "Observa\u00e7\u00f5es"
+    },
+    "rir_target": {
+      "type": "number",
+      "description": "RIR alvo"
+    },
+    "rpe_target": {
+      "type": "number",
+      "description": "RPE alvo"
     }
   },
   "required": [

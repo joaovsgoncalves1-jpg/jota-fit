@@ -6,21 +6,89 @@
       "type": "string",
       "description": "Nome do exerc\u00edcio"
     },
-    "description": {
+    "slug": {
       "type": "string",
-      "description": "Descri\u00e7\u00e3o simples"
+      "description": "Slug \u00fanico"
+    },
+    "exercise_type": {
+      "type": "string",
+      "enum": [
+        "musculacao",
+        "calistenia",
+        "mobilidade",
+        "cardio",
+        "skill",
+        "alongamento",
+        "aquecimento",
+        "ativacao",
+        "reabilitacao"
+      ],
+      "description": "Tipo de exerc\u00edcio"
     },
     "movement_pattern": {
       "type": "string",
       "enum": [
+        "empurrar_horizontal",
+        "empurrar_vertical",
+        "puxar_horizontal",
+        "puxar_vertical",
+        "agachamento",
+        "hinge",
+        "lunge",
+        "extensao_joelho",
+        "flexao_joelho",
+        "core_anti_extensao",
+        "core_anti_rotacao",
+        "core_flexao",
+        "compressao",
+        "isometria",
+        "skill",
+        "mobilidade",
         "puxar",
         "empurrar",
         "core",
-        "pernas",
-        "mobilidade",
-        "skill"
+        "pernas"
       ],
       "description": "Padr\u00e3o de movimento"
+    },
+    "primary_muscle": {
+      "type": "string",
+      "description": "M\u00fasculo principal"
+    },
+    "secondary_muscles": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "M\u00fasculos secund\u00e1rios"
+    },
+    "muscle_groups": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Todos os grupos musculares"
+    },
+    "equipment": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Equipamentos necess\u00e1rios"
+    },
+    "equipment_needed": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Equipamentos (alias)"
+    },
+    "location": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Locais: academia, casa, parque, barra, paralelas, argolas, solo"
     },
     "difficulty": {
       "type": "string",
@@ -31,23 +99,32 @@
       ],
       "description": "N\u00edvel de dificuldade"
     },
-    "equipment_needed": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "description": "Equipamentos: sem_equipamento, barra, paralelas, elastico, argolas"
+    "tracking_type": {
+      "type": "string",
+      "enum": [
+        "weight_reps",
+        "bodyweight_reps",
+        "assisted_bodyweight",
+        "hold_time",
+        "time_distance",
+        "mobility_time",
+        "circuit",
+        "unilateral"
+      ],
+      "default": "weight_reps",
+      "description": "Tipo de registro"
     },
-    "muscle_groups": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "description": "Grupos musculares trabalhados"
+    "description": {
+      "type": "string",
+      "description": "Descri\u00e7\u00e3o curta"
+    },
+    "instructions": {
+      "type": "string",
+      "description": "Passo a passo de execu\u00e7\u00e3o"
     },
     "tips": {
       "type": "string",
-      "description": "Dica de execu\u00e7\u00e3o"
+      "description": "Dicas de execu\u00e7\u00e3o"
     },
     "common_mistakes": {
       "type": "string",
@@ -61,6 +138,69 @@
       "type": "number",
       "description": "Descanso sugerido em segundos"
     },
+    "uses_band": {
+      "type": "boolean",
+      "default": false,
+      "description": "Usa el\u00e1stico"
+    },
+    "band_usage_type": {
+      "type": "string",
+      "enum": [
+        "assistencia",
+        "resistencia",
+        "aquecimento",
+        "mobilidade",
+        "ativacao",
+        "progressao",
+        "substituicao"
+      ],
+      "description": "Tipo de uso do el\u00e1stico"
+    },
+    "band_assistance_level": {
+      "type": "string",
+      "enum": [
+        "leve",
+        "medio",
+        "forte",
+        "muito_forte"
+      ],
+      "description": "N\u00edvel de assist\u00eancia do el\u00e1stico"
+    },
+    "band_anchor_point": {
+      "type": "string",
+      "description": "Ponto de ancoragem do el\u00e1stico"
+    },
+    "band_purpose": {
+      "type": "string",
+      "description": "Prop\u00f3sito do el\u00e1stico"
+    },
+    "unilateral": {
+      "type": "boolean",
+      "default": false,
+      "description": "Exerc\u00edcio unilateral"
+    },
+    "is_jota_original": {
+      "type": "boolean",
+      "default": false,
+      "description": "Criado pelo Jota"
+    },
+    "verified_by_jota": {
+      "type": "boolean",
+      "default": false,
+      "description": "Verificado pelo Jota"
+    },
+    "external_id": {
+      "type": "string",
+      "description": "ID externo (API)"
+    },
+    "source": {
+      "type": "string",
+      "description": "Fonte do exerc\u00edcio"
+    },
+    "gif_url": {
+      "type": "string",
+      "description": "URL do GIF"
+    },
     "video_url": {
       "type": "string",
       "description": "URL do YouTube"
@@ -68,6 +208,10 @@
     "image_url": {
       "type": "string",
       "description": "URL da imagem"
+    },
+    "thumbnail_url": {
+      "type": "string",
+      "description": "URL da thumbnail"
     }
   },
   "required": [

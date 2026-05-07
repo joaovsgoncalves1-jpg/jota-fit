@@ -1,0 +1,64 @@
+{
+  "name": "ExercisePersonalRecord",
+  "type": "object",
+  "properties": {
+    "student_email": {
+      "type": "string"
+    },
+    "exercise_id": {
+      "type": "string"
+    },
+    "exercise_name": {
+      "type": "string"
+    },
+    "record_type": {
+      "type": "string",
+      "enum": [
+        "max_weight",
+        "max_reps",
+        "max_volume",
+        "max_duration",
+        "first_rep",
+        "band_reduction",
+        "first_without_band"
+      ],
+      "description": "Tipo de PR"
+    },
+    "value": {
+      "type": "number",
+      "description": "Valor do PR"
+    },
+    "reps": {
+      "type": "number",
+      "description": "Reps no PR (se aplic\u00e1vel)"
+    },
+    "weight_kg": {
+      "type": "number",
+      "description": "Carga no PR"
+    },
+    "duration_seconds": {
+      "type": "number"
+    },
+    "band_level": {
+      "type": "string",
+      "description": "N\u00edvel de el\u00e1stico no PR"
+    },
+    "context": {
+      "type": "string",
+      "description": "Contexto adicional"
+    },
+    "achieved_at": {
+      "type": "string",
+      "format": "date",
+      "description": "Data do PR"
+    },
+    "session_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "student_email",
+    "exercise_id",
+    "record_type"
+  ]
+}
