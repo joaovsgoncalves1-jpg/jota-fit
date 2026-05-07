@@ -4,19 +4,19 @@ import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/lib/useCurrentUser';
 import { motion } from 'framer-motion';
 import { CheckCircle, Flame } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import XPBadge from '@/components/game/XPBadge';
-import StreakBadge from '@/components/game/StreakBadge';
 import { format } from 'date-fns';
+import HomeDashboard from './HomeDashboard';
 
 export default function CheckinPage() {
   const { user } = useCurrentUser();
   const queryClient = useQueryClient();
   const [showXP, setShowXP] = useState(false);
   const [xpAmount, setXpAmount] = useState(0);
+  const [justCheckedIn, setJustCheckedIn] = useState(false);
   const today = format(new Date(), 'yyyy-MM-dd');
 
-  const { data: todayCheckin, isLoading: loadingCheckin } = useQuery({
+  const { data: todayCheckin } = useQuery({
     queryKey: ['checkin-today', user?.email, today],
     queryFn: () => base44.entities.Checkin.filter({ student_email: user?.email, date: today }),
     enabled: !!user?.email,
@@ -34,105 +34,87 @@ export default function CheckinPage() {
   });
 
   const myProfile = profile?.[0];
-  const alreadyCheckedIn = todayCheckin && todayCheckin.length > 0;
+  const alreadyCheckedIn = (todayCheckin && todayCheckin.length > 0) || justCheckedIn;
 
   const checkinMutation = useMutation({
     mutationFn: async () => {
       const checkinXP = xpConfigs?.find(c => c.action_type === 'checkin')?.xp_value || 50;
-      
-      // Create check-in record
-      await base44.entities.Checkin.create({
-        student_email: user.email,
-        date: today,
-        xp_earned: checkinXP,
-      });
-
-      // Calculate new streak
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayStr = format(yesterday, 'yyyy-MM-dd');
-      
-      let newStreak = 1;
-      if (myProfile?.last_checkin_date === yesterdayStr) {
-        newStreak = (myProfile?.current_streak || 0) + 1;
-      }
-
-      // Update profile
+      await base44.entities.Checkin.create({ student_email: user.email, date: today, xp_earned: checkinXP });
+      const yesterday = format(new Date(new Date().setDate(new Date().getDate() - 1)), 'yyyy-MM-dd');
+      const newStreak = myProfile?.last_checkin_date === yesterday ? (myProfile?.current_streak || 0) + 1 : 1;
       await base44.entities.StudentProfile.update(myProfile.id, {
         xp_total: (myProfile?.xp_total || 0) + checkinXP,
         current_streak: newStreak,
         max_streak: Math.max(newStreak, myProfile?.max_streak || 0),
         last_checkin_date: today,
       });
-
       return { xp: checkinXP, streak: newStreak };
     },
     onSuccess: (data) => {
       setXpAmount(data.xp);
       setShowXP(true);
-      setTimeout(() => setShowXP(false), 2000);
+      setJustCheckedIn(true);
+      setTimeout(() => setShowXP(false), 2500);
       queryClient.invalidateQueries({ queryKey: ['checkin-today'] });
       queryClient.invalidateQueries({ queryKey: ['my-profile'] });
     },
   });
 
   return (
-    <div className="min-h-[80vh] flex flex-col items-center justify-center px-4">
+    <div className="max-w-lg mx-auto">
       <XPBadge amount={xpAmount} show={showXP} />
 
-      <motion.div
-        className="text-center max-w-sm w-full"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        {/* Streak display */}
-        <div className="mb-8">
-          <StreakBadge days={myProfile?.current_streak || 0} size="lg" />
-          {myProfile?.max_streak > 0 && (
-            <p className="text-xs text-muted-foreground mt-2">
-              Recorde: {myProfile.max_streak} dias
-            </p>
-          )}
-        </div>
-
-        {/* Check-in button */}
-        {alreadyCheckedIn ? (
-          <motion.div
-            initial={{ scale: 0.8 }}
-            animate={{ scale: 1 }}
-            className="space-y-4"
+      {!alreadyCheckedIn && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="px-4 pt-4 pb-2"
+        >
+          <button
+            onClick={() => checkinMutation.mutate()}
+            disabled={checkinMutation.isPending}
+            className="w-full flex items-center gap-4 bg-gradient-to-r from-primary/20 to-primary/10 border border-primary/40 rounded-2xl p-4 active:scale-[0.98] transition-all disabled:opacity-50"
           >
-            <div className="w-32 h-32 rounded-full bg-success/20 border-2 border-success flex items-center justify-center mx-auto">
-              <CheckCircle className="w-16 h-16 text-success" />
-            </div>
-            <h2 className="font-display text-xl font-bold text-success">CHECK-IN FEITO!</h2>
-            <p className="text-muted-foreground text-sm">Você já fez seu check-in hoje. Volte amanhã para manter sua streak!</p>
-          </motion.div>
-        ) : (
-          <motion.div className="space-y-6">
-            <button
-              onClick={() => checkinMutation.mutate()}
-              disabled={checkinMutation.isPending}
-              className="w-40 h-40 rounded-full bg-gradient-to-br from-primary to-primary/70 border-4 border-primary/30 flex items-center justify-center mx-auto shadow-[0_0_40px_rgba(249,115,22,0.3)] hover:shadow-[0_0_60px_rgba(249,115,22,0.5)] active:scale-95 transition-all disabled:opacity-50"
+            <motion.div
+              animate={{ scale: [1, 1.05, 1] }}
+              transition={{ repeat: Infinity, duration: 2 }}
+              className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center shadow-[0_0_20px_rgba(249,115,22,0.4)] shrink-0"
             >
               {checkinMutation.isPending ? (
-                <div className="w-10 h-10 border-4 border-white/30 border-t-white rounded-full animate-spin" />
+                <div className="w-7 h-7 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
-                <Flame className="w-16 h-16 text-white" />
+                <Flame className="w-8 h-8 text-white" />
               )}
-            </button>
-            <div>
-              <h2 className="font-display text-xl font-bold text-foreground">CHECK-IN</h2>
-              <p className="text-muted-foreground text-sm mt-1">Toque para registrar sua presença hoje</p>
+            </motion.div>
+            <div className="text-left">
+              <p className="font-display font-black text-lg text-primary">FAZER CHECK-IN</p>
+              <p className="text-sm text-muted-foreground">Registre sua presença e ganhe XP 🔥</p>
             </div>
-          </motion.div>
-        )}
+          </button>
+        </motion.div>
+      )}
 
-        {/* Today's date */}
-        <p className="text-xs text-muted-foreground mt-8">
-          {format(new Date(), "dd 'de' MMMM, yyyy")}
-        </p>
-      </motion.div>
+      {alreadyCheckedIn && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="px-4 pt-4 pb-2"
+        >
+          <div className="w-full flex items-center gap-4 bg-success/10 border border-success/30 rounded-2xl p-4">
+            <div className="w-14 h-14 rounded-2xl bg-success/20 flex items-center justify-center shrink-0">
+              <CheckCircle className="w-8 h-8 text-success" />
+            </div>
+            <div>
+              <p className="font-display font-black text-base text-success">CHECK-IN FEITO! ✅</p>
+              <p className="text-sm text-muted-foreground">
+                🔥 Streak: {myProfile?.current_streak || 1} dias · Volte amanhã!
+              </p>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      <HomeDashboard />
     </div>
   );
 }
