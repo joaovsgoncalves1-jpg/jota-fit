@@ -105,7 +105,10 @@ function WeekLoadMini({ email, navigate }) {
   });
 
   const weekSessions = useMemo(() =>
-    (sessions || []).filter(s => (s.finished_at || s.created_date || '').slice(0, 10) >= weekStart),
+    (sessions || []).filter(s =>
+      (s.status === 'completed' || !s.status) &&
+      (s.finished_at || s.created_date || '').slice(0, 10) >= weekStart
+    ),
     [sessions, weekStart]);
   const weekActivities = useMemo(() =>
     (activities || []).filter(a => a.date >= weekStart && a.date <= weekEnd),
