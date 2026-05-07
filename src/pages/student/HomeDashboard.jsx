@@ -6,8 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { calculateLevel } from '@/lib/gamification';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
-import { BookOpen, ListChecks, Swords, CheckCircle, ChevronRight, Flame, Zap, TrendingUp, Play } from 'lucide-react';
-import HPBar from '@/components/game/HPBar';
+import { BookOpen, ListChecks, TrendingUp, Play, Flame, Zap, Trophy, ChevronRight, Map } from 'lucide-react';
 import LevelProgress from '@/components/game/LevelProgress';
 
 function ActiveRoutineCard({ navigate }) {
@@ -18,34 +17,77 @@ function ActiveRoutineCard({ navigate }) {
     enabled: !!user?.email,
   });
   const active = (routines || []).find(r => r.is_active) || (routines || [])[0];
+
   if (!active) return (
-    <button onClick={() => navigate('/rotina')} className="w-full bg-card border border-dashed border-border rounded-2xl p-5 text-center hover:border-primary/30 transition-all">
+    <button
+      onClick={() => navigate('/rotina')}
+      className="w-full bg-card border border-dashed border-border rounded-2xl p-5 text-center hover:border-primary/30 transition-all"
+    >
       <ListChecks className="w-7 h-7 mx-auto mb-2 text-muted-foreground opacity-40" />
       <p className="text-sm text-muted-foreground">Nenhuma rotina criada</p>
       <p className="text-xs text-primary font-bold mt-1">Criar minha rotina →</p>
     </button>
   );
+
   return (
-    <button onClick={() => navigate(`/treino/${active.id}`)}
-      className="w-full flex items-center gap-3 bg-card border border-primary/30 rounded-2xl p-4 text-left hover:border-primary/50 transition-all active:scale-[0.98]">
-      <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center shrink-0">
-        <Play className="w-6 h-6 text-primary" />
+    <button
+      onClick={() => navigate(`/treino/${active.id}`)}
+      className="w-full bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/30 rounded-2xl p-4 text-left hover:border-primary/50 transition-all active:scale-[0.98] group"
+    >
+      <div className="flex items-center gap-3">
+        <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center shrink-0 shadow-[0_0_20px_rgba(249,115,22,0.35)] group-active:shadow-none transition-all">
+          <Play className="w-7 h-7 text-white" fill="white" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs text-primary font-bold uppercase tracking-wider mb-0.5">Treino de hoje</p>
+          <p className="font-display font-black text-base text-foreground leading-tight">{active.name}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {(active.days_of_week || []).join(', ') || 'Qualquer dia'} · {active.created_by === 'jota' ? '⭐ Plano Jota' : 'Minha rotina'}
+          </p>
+        </div>
+        <ChevronRight className="w-5 h-5 text-primary shrink-0" />
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="font-bold text-sm">{active.name}</p>
-        <p className="text-xs text-muted-foreground">
-          {(active.days_of_week || []).join(', ') || 'Qualquer dia'}
-        </p>
-      </div>
-      <span className="text-xs font-bold text-primary">Iniciar →</span>
     </button>
+  );
+}
+
+function RecentPRCard({ email }) {
+  const { data: prs } = useQuery({
+    queryKey: ['my-prs', email],
+    queryFn: () => base44.entities.ExercisePersonalRecord.filter({ student_email: email }),
+    enabled: !!email,
+  });
+  const latest = prs?.sort((a, b) => (b.achieved_at || '').localeCompare(a.achieved_at || ''))[0];
+  if (!latest) return null;
+
+  const prLabel = () => {
+    if (latest.record_type === 'max_weight') return `${latest.weight_kg}kg × ${latest.reps} reps`;
+    if (latest.record_type === 'max_reps') return `${latest.reps} reps livres`;
+    if (latest.record_type === 'max_duration') return `${latest.duration_seconds}s`;
+    if (latest.record_type === 'band_reduction') return `Elástico ${latest.band_level}`;
+    if (latest.record_type === 'first_without_band') return 'Primeira sem elástico!';
+    return latest.context || 'Novo recorde';
+  };
+
+  return (
+    <div className="bg-card border border-gold/20 rounded-2xl p-4">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl bg-gold/15 flex items-center justify-center shrink-0">
+          <Trophy className="w-5 h-5 text-gold" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs text-gold font-bold uppercase tracking-wider">Último PR</p>
+          <p className="font-bold text-sm text-foreground truncate">{latest.exercise_name}</p>
+          <p className="text-xs text-muted-foreground">{prLabel()}</p>
+        </div>
+      </div>
+    </div>
   );
 }
 
 export default function HomeDashboard() {
   const { user } = useCurrentUser();
   const navigate = useNavigate();
-  const today = format(new Date(), 'yyyy-MM-dd');
 
   const { data: profile } = useQuery({
     queryKey: ['my-profile', user?.email],
@@ -53,83 +95,47 @@ export default function HomeDashboard() {
     enabled: !!user?.email,
   });
 
-  const { data: skillProgress } = useQuery({
-    queryKey: ['my-skill-progress', user?.email],
-    queryFn: () => base44.entities.SkillProgress.filter({ student_email: user?.email }),
-    enabled: !!user?.email,
-  });
-
-  const { data: skills } = useQuery({
-    queryKey: ['all-skills'],
-    queryFn: () => base44.entities.Skill.list(),
-  });
-
-  const { data: bosses } = useQuery({
-    queryKey: ['all-bosses'],
-    queryFn: () => base44.entities.Boss.list(),
-  });
-
-  const { data: bossProgress } = useQuery({
-    queryKey: ['my-boss-progress', user?.email],
-    queryFn: () => base44.entities.BossProgress.filter({ student_email: user?.email }),
-    enabled: !!user?.email,
-  });
-
-  const { data: checkin } = useQuery({
-    queryKey: ['checkin-today', user?.email, today],
-    queryFn: () => base44.entities.Checkin.filter({ student_email: user?.email, date: today }),
-    enabled: !!user?.email,
-  });
-
   const myProfile = profile?.[0];
   const levelInfo = calculateLevel(myProfile?.xp_total || 0);
-  const checkedInToday = checkin && checkin.length > 0;
-
-  // Active skill & boss
-  const activeSkillProgress = skillProgress?.find(s => s.status === 'in_progress');
-  const activeSkill = skills?.find(s => s.id === activeSkillProgress?.skill_id);
-  let activeBoss = null;
-  let activeBossProgress = null;
-  if (activeSkill) {
-    const skillBosses = (bosses || []).filter(b => b.skill_id === activeSkill.id).sort((a, b) => (a.order_in_skill || 1) - (b.order_in_skill || 1));
-    for (const boss of skillBosses) {
-      const bp = bossProgress?.find(p => p.boss_id === boss.id);
-      if (!bp || !bp.defeated) { activeBoss = boss; activeBossProgress = bp; break; }
-    }
-  }
-
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
-  const firstName = myProfile?.name?.split(' ')[0] || 'Atleta';
+  const firstName = myProfile?.name?.split(' ')[0] || user?.full_name?.split(' ')[0] || 'Atleta';
+
+  const SHORTCUTS = [
+    { label: 'Biblioteca', icon: BookOpen, path: '/biblioteca', color: 'text-blue-400', bg: 'bg-blue-400/10', border: 'border-blue-400/20' },
+    { label: 'Rotina', icon: ListChecks, path: '/rotina', color: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/20' },
+    { label: 'Progresso', icon: TrendingUp, path: '/progresso', color: 'text-success', bg: 'bg-success/10', border: 'border-success/20' },
+    { label: 'Jornada', icon: Map, path: '/jornada', color: 'text-purple-400', bg: 'bg-purple-400/10', border: 'border-purple-400/20' },
+  ];
 
   return (
     <div className="max-w-lg mx-auto p-4 pb-6 space-y-4">
 
-      {/* HEADER */}
-      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="pt-2">
+      {/* GREETING */}
+      <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}>
         <p className="text-muted-foreground text-sm">{greeting},</p>
         <h1 className="font-display text-2xl font-black text-foreground">{firstName} 💪</h1>
       </motion.div>
 
-      {/* LEVEL CARD */}
+      {/* STATS ROW */}
       <motion.div
-        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-        className="bg-gradient-to-br from-card to-card/80 border border-border rounded-2xl p-4"
+        initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 }}
+        className="bg-card border border-border rounded-2xl p-4 space-y-3"
       >
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs text-muted-foreground uppercase tracking-widest">Nível {levelInfo.level}</p>
-            <p className="font-display font-black text-lg text-primary">{levelInfo.title}</p>
+            <p className="text-xs text-muted-foreground">Nível {levelInfo.level}</p>
+            <p className="font-display font-black text-base text-primary leading-tight">{levelInfo.title}</p>
           </div>
-          <div className="flex items-center gap-3">
-            {myProfile?.current_streak > 0 && (
-              <div className="flex items-center gap-1 bg-primary/10 border border-primary/20 rounded-xl px-3 py-1.5">
-                <Flame className="w-4 h-4 text-primary" />
+          <div className="flex items-center gap-2">
+            {(myProfile?.current_streak || 0) > 0 && (
+              <div className="flex items-center gap-1 bg-primary/10 border border-primary/20 rounded-xl px-2.5 py-1.5">
+                <Flame className="w-3.5 h-3.5 text-primary" />
                 <span className="font-display font-black text-sm text-primary">{myProfile.current_streak}</span>
               </div>
             )}
-            <div className="flex items-center gap-1 bg-gold/10 border border-gold/20 rounded-xl px-3 py-1.5">
-              <Zap className="w-4 h-4 text-gold" />
+            <div className="flex items-center gap-1 bg-gold/10 border border-gold/20 rounded-xl px-2.5 py-1.5">
+              <Zap className="w-3.5 h-3.5 text-gold" />
               <span className="font-display font-black text-sm text-gold">{(myProfile?.xp_total || 0).toLocaleString()}</span>
             </div>
           </div>
@@ -137,80 +143,35 @@ export default function HomeDashboard() {
         <LevelProgress levelInfo={levelInfo} size="sm" />
       </motion.div>
 
-      {/* CHECK-IN STRIP */}
-      <motion.button
-        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
-        onClick={() => navigate('/')}
-        className={`w-full flex items-center justify-between rounded-2xl p-4 border transition-all
-          ${checkedInToday
-            ? 'bg-success/10 border-success/30 cursor-default'
-            : 'bg-primary/10 border-primary/30 hover:bg-primary/20 active:scale-[0.98]'
-          }`}
-      >
-        <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${checkedInToday ? 'bg-success/20' : 'bg-primary/20'}`}>
-            {checkedInToday
-              ? <CheckCircle className="w-5 h-5 text-success" />
-              : <Flame className="w-5 h-5 text-primary" />
-            }
-          </div>
-          <div className="text-left">
-            <p className="font-bold text-sm">{checkedInToday ? 'Check-in feito hoje!' : 'Fazer check-in'}</p>
-            <p className="text-xs text-muted-foreground">{checkedInToday ? `Streak: 🔥 ${myProfile?.current_streak || 0} dias` : '+50 XP ao registrar presença'}</p>
-          </div>
-        </div>
-        {!checkedInToday && <ChevronRight className="w-5 h-5 text-primary" />}
-      </motion.button>
-
-      {/* ROTINA ATIVA */}
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Rotina Ativa</p>
-          <button onClick={() => navigate('/rotina')} className="text-xs text-primary font-bold flex items-center gap-0.5">Ver todas <ChevronRight className="w-3 h-3" /></button>
-        </div>
+      {/* TREINO DE HOJE */}
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
         <ActiveRoutineCard navigate={navigate} />
       </motion.div>
 
-      {/* BOSS ATUAL */}
-      {activeBoss && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.13 }}>
-          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">Jornada — Chefe Atual</p>
-          <button onClick={() => navigate('/jornada')} className="w-full bg-card border border-destructive/20 rounded-2xl p-4 text-left hover:border-destructive/40 transition-all">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-xl bg-destructive/20 flex items-center justify-center">
-                <Swords className="w-5 h-5 text-destructive" />
-              </div>
-              <div className="flex-1">
-                <p className="font-bold text-sm">{activeBoss.name}</p>
-                <p className="text-xs text-muted-foreground">Skill: {activeSkill?.name}</p>
-              </div>
-              <span className="text-xs text-destructive font-bold">{activeBoss.xp_bonus} XP</span>
-            </div>
-            <HPBar
-              current={activeBossProgress ? activeBossProgress.current_hp : activeBoss.hp_total}
-              total={activeBoss.hp_total}
-              size="sm"
-            />
-          </button>
+      {/* PR RECENTE */}
+      {user?.email && (
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+          <RecentPRCard email={user.email} />
         </motion.div>
       )}
 
-      {/* ATALHOS RÁPIDOS */}
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }}>
-        <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">Acesso Rápido</p>
-        <div className="grid grid-cols-3 gap-2">
-          {[
-            { label: 'Biblioteca', icon: <BookOpen className="w-6 h-6" />, path: '/biblioteca', color: 'text-blue-400' },
-            { label: 'Montar Rotina', icon: <ListChecks className="w-6 h-6" />, path: '/rotina', color: 'text-primary' },
-            { label: 'Progresso', icon: <TrendingUp className="w-6 h-6" />, path: '/progresso', color: 'text-success' },
-          ].map(s => (
-            <button key={s.label} onClick={() => navigate(s.path)}
-              className="flex flex-col items-center gap-2 bg-card border border-border rounded-2xl p-4 hover:border-primary/30 transition-all active:scale-95"
-            >
-              <span className={s.color}>{s.icon}</span>
-              <p className="text-xs font-bold text-center leading-tight">{s.label}</p>
-            </button>
-          ))}
+      {/* ATALHOS */}
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}>
+        <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">Acesso rápido</p>
+        <div className="grid grid-cols-4 gap-2">
+          {SHORTCUTS.map(s => {
+            const Icon = s.icon;
+            return (
+              <button
+                key={s.label}
+                onClick={() => navigate(s.path)}
+                className={`flex flex-col items-center gap-2 ${s.bg} border ${s.border} rounded-2xl py-4 px-2 hover:opacity-90 transition-all active:scale-95`}
+              >
+                <Icon className={`w-5 h-5 ${s.color}`} />
+                <p className={`text-[10px] font-bold ${s.color} text-center leading-tight`}>{s.label}</p>
+              </button>
+            );
+          })}
         </div>
       </motion.div>
 

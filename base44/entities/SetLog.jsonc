@@ -1,0 +1,127 @@
+{
+  "name": "SetLog",
+  "type": "object",
+  "properties": {
+    "session_id": {
+      "type": "string",
+      "description": "ID da sess\u00e3o de treino"
+    },
+    "student_email": {
+      "type": "string",
+      "description": "Email do aluno"
+    },
+    "exercise_id": {
+      "type": "string",
+      "description": "ID do exerc\u00edcio"
+    },
+    "exercise_name": {
+      "type": "string",
+      "description": "Nome do exerc\u00edcio (snapshot)"
+    },
+    "set_number": {
+      "type": "number",
+      "description": "N\u00famero da s\u00e9rie"
+    },
+    "weight_kg": {
+      "type": "number",
+      "description": "Carga em kg"
+    },
+    "reps": {
+      "type": "number",
+      "description": "Repeti\u00e7\u00f5es"
+    },
+    "duration_seconds": {
+      "type": "number",
+      "description": "Dura\u00e7\u00e3o em segundos (isometria/cardio)"
+    },
+    "bodyweight_kg": {
+      "type": "number",
+      "description": "Peso corporal"
+    },
+    "added_weight_kg": {
+      "type": "number",
+      "description": "Carga adicional (calistenia)"
+    },
+    "band_assistance_level": {
+      "type": "string",
+      "enum": [
+        "leve",
+        "medio",
+        "forte",
+        "muito_forte"
+      ],
+      "description": "N\u00edvel do el\u00e1stico"
+    },
+    "band_color": {
+      "type": "string",
+      "description": "Cor do el\u00e1stico"
+    },
+    "assistance_type": {
+      "type": "string",
+      "description": "Tipo de assist\u00eancia"
+    },
+    "side": {
+      "type": "string",
+      "enum": [
+        "both",
+        "right",
+        "left"
+      ],
+      "default": "both",
+      "description": "Lado"
+    },
+    "right_reps": {
+      "type": "number"
+    },
+    "right_weight_kg": {
+      "type": "number"
+    },
+    "right_duration_seconds": {
+      "type": "number"
+    },
+    "left_reps": {
+      "type": "number"
+    },
+    "left_weight_kg": {
+      "type": "number"
+    },
+    "left_duration_seconds": {
+      "type": "number"
+    },
+    "rir": {
+      "type": "number",
+      "description": "Reps in reserve"
+    },
+    "rpe": {
+      "type": "number",
+      "description": "Rate of perceived exertion"
+    },
+    "rest_seconds": {
+      "type": "number",
+      "description": "Descanso real em segundos"
+    },
+    "is_pr": {
+      "type": "boolean",
+      "default": false,
+      "description": "\u00c9 novo recorde"
+    },
+    "pr_type": {
+      "type": "string",
+      "description": "Tipo de PR"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Observa\u00e7\u00f5es"
+    },
+    "completed": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "session_id",
+    "student_email",
+    "exercise_id",
+    "set_number"
+  ]
+}

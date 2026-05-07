@@ -2,35 +2,68 @@ import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/lib/useCurrentUser';
-import { Search, Filter, Heart, Plus, X, Play, ChevronDown, ChevronUp } from 'lucide-react';
+import { Search, Filter, Heart, Plus, X, ChevronDown, ChevronUp, Dumbbell } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ExerciseDetailSheet from '@/components/biblioteca/ExerciseDetailSheet';
 import AddToRoutineModal from '@/components/biblioteca/AddToRoutineModal';
 
-const PATTERNS = [
+const MOVEMENT_FILTERS = [
   { key: '', label: 'Todos' },
-  { key: 'puxar', label: '↗ Puxar' },
-  { key: 'empurrar', label: '↙ Empurrar' },
-  { key: 'core', label: '🔥 Core' },
-  { key: 'pernas', label: '🦵 Pernas' },
+  { key: 'puxar_vertical', label: '↑ Puxar' },
+  { key: 'empurrar_horizontal', label: '→ Empurrar' },
+  { key: 'agachamento', label: '🦵 Pernas' },
+  { key: 'hinge', label: '🍑 Quadril' },
+  { key: 'core_flexao', label: '🔥 Core' },
+  { key: 'isometria', label: '⏱ Isometria' },
   { key: 'mobilidade', label: '🤸 Mobilidade' },
   { key: 'skill', label: '⭐ Skill' },
+  // legado
+  { key: 'puxar', label: '↗ Puxar+' },
+  { key: 'empurrar', label: '↙ Empurrar+' },
+  { key: 'core', label: '🔥 Core+' },
+  { key: 'pernas', label: '🦵 Pernas+' },
 ];
 
-const LEVELS = [
-  { key: '', label: 'Nível' },
-  { key: 'beginner', label: 'Iniciante' },
-  { key: 'intermediate', label: 'Intermediário' },
-  { key: 'advanced', label: 'Avançado' },
+const MUSCLE_FILTERS = [
+  { key: '', label: 'Músculo' },
+  { key: 'Peitoral', label: 'Peitoral' },
+  { key: 'Costas', label: 'Costas' },
+  { key: 'Dorsal', label: 'Dorsal' },
+  { key: 'Ombros', label: 'Ombros' },
+  { key: 'Bíceps', label: 'Bíceps' },
+  { key: 'Tríceps', label: 'Tríceps' },
+  { key: 'Abdômen', label: 'Abdômen' },
+  { key: 'Glúteos', label: 'Glúteos' },
+  { key: 'Quadríceps', label: 'Quadríceps' },
+  { key: 'Posterior de coxa', label: 'Posterior' },
+  { key: 'Panturrilhas', label: 'Panturrilha' },
+  { key: 'Core', label: 'Core' },
 ];
 
-const EQUIPMENT = [
-  { key: '', label: 'Equipamento' },
-  { key: 'sem_equipamento', label: 'Sem equipamento' },
+const EQUIPMENT_FILTERS = [
+  { key: '', label: 'Equip.' },
+  { key: 'sem_equipamento', label: 'Sem equip.' },
+  { key: 'peso corporal', label: 'Peso corporal' },
   { key: 'barra', label: 'Barra' },
   { key: 'paralelas', label: 'Paralelas' },
+  { key: 'halteres', label: 'Halteres' },
+  { key: 'barra livre', label: 'Barra livre' },
+  { key: 'cabos/polia', label: 'Cabo/Polia' },
+  { key: 'maquina', label: 'Máquina' },
   { key: 'elastico', label: 'Elástico' },
   { key: 'argolas', label: 'Argolas' },
+  { key: 'kettlebell', label: 'Kettlebell' },
+];
+
+const TYPE_FILTERS = [
+  { key: '', label: 'Tipo' },
+  { key: 'musculacao', label: '🏋️ Musculação' },
+  { key: 'calistenia', label: '💪 Calistenia' },
+  { key: 'mobilidade', label: '🤸 Mobilidade' },
+  { key: 'cardio', label: '🏃 Cardio' },
+  { key: 'skill', label: '⭐ Skill' },
+  { key: 'aquecimento', label: '🔥 Aquecimento' },
+  { key: 'ativacao', label: '⚡ Ativação' },
 ];
 
 const LEVEL_BADGE = {
@@ -38,20 +71,22 @@ const LEVEL_BADGE = {
   intermediate: 'bg-primary/20 text-primary',
   advanced: 'bg-destructive/20 text-destructive',
 };
+const LEVEL_LABEL = { beginner: 'Iniciante', intermediate: 'Intermediário', advanced: 'Avançado' };
 
-const LEVEL_LABEL = {
-  beginner: 'Iniciante',
-  intermediate: 'Intermediário',
-  advanced: 'Avançado',
+const PATTERN_EMOJI = {
+  empurrar_horizontal: '→', empurrar_vertical: '↑', puxar_horizontal: '←', puxar_vertical: '↑',
+  agachamento: '🦵', hinge: '🍑', lunge: '🚶', core_flexao: '🔥', isometria: '⏱', skill: '⭐',
+  mobilidade: '🤸', puxar: '↗', empurrar: '↙', core: '🔥', pernas: '🦵',
 };
 
 export default function BibliotecaPage() {
   const { user } = useCurrentUser();
-  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
-  const [pattern, setPattern] = useState('');
-  const [level, setLevel] = useState('');
+  const [movement, setMovement] = useState('');
+  const [muscle, setMuscle] = useState('');
   const [equipment, setEquipment] = useState('');
+  const [exType, setExType] = useState('');
+  const [onlyBand, setOnlyBand] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [selectedExercise, setSelectedExercise] = useState(null);
   const [addToRoutineExercise, setAddToRoutineExercise] = useState(null);
@@ -61,17 +96,32 @@ export default function BibliotecaPage() {
 
   const { data: exercises, isLoading } = useQuery({
     queryKey: ['all-exercises'],
-    queryFn: () => base44.entities.Exercise.list(),
+    queryFn: () => base44.entities.Exercise.list('-created_date', 500),
   });
 
   const filtered = useMemo(() => {
     let list = exercises || [];
-    if (search) list = list.filter(e => e.name?.toLowerCase().includes(search.toLowerCase()));
-    if (pattern) list = list.filter(e => e.movement_pattern === pattern);
-    if (level) list = list.filter(e => e.difficulty === level);
-    if (equipment) list = list.filter(e => (e.equipment_needed || []).includes(equipment));
+    const q = search.toLowerCase();
+    if (q) list = list.filter(e =>
+      e.name?.toLowerCase().includes(q) ||
+      e.primary_muscle?.toLowerCase().includes(q) ||
+      (e.muscle_groups || []).some(m => m.toLowerCase().includes(q)) ||
+      (e.secondary_muscles || []).some(m => m.toLowerCase().includes(q))
+    );
+    if (movement) list = list.filter(e => e.movement_pattern === movement);
+    if (muscle) list = list.filter(e =>
+      e.primary_muscle === muscle ||
+      (e.muscle_groups || []).includes(muscle) ||
+      (e.secondary_muscles || []).includes(muscle)
+    );
+    if (equipment) list = list.filter(e =>
+      (e.equipment || []).includes(equipment) ||
+      (e.equipment_needed || []).includes(equipment)
+    );
+    if (exType) list = list.filter(e => e.exercise_type === exType);
+    if (onlyBand) list = list.filter(e => e.uses_band);
     return list;
-  }, [exercises, search, pattern, level, equipment]);
+  }, [exercises, search, movement, muscle, equipment, exType, onlyBand]);
 
   const toggleFav = (id) => {
     setFavorites(prev => {
@@ -81,13 +131,25 @@ export default function BibliotecaPage() {
     });
   };
 
-  const hasFilters = pattern || level || equipment;
+  const hasFilters = movement || muscle || equipment || exType || onlyBand;
+  const clearFilters = () => { setMovement(''); setMuscle(''); setEquipment(''); setExType(''); setOnlyBand(false); };
+
+  // Show only first 12 unique movement keys
+  const movementOptions = MOVEMENT_FILTERS.filter(m => {
+    if (!m.key) return true;
+    return (exercises || []).some(e => e.movement_pattern === m.key);
+  }).slice(0, 12);
 
   return (
     <div className="max-w-lg mx-auto pb-8">
       {/* Header */}
       <div className="px-4 pt-4 pb-3 space-y-3">
-        <h1 className="font-display text-xl font-black">BIBLIOTECA</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="font-display text-xl font-black">BIBLIOTECA</h1>
+          <span className="text-xs text-muted-foreground bg-muted/30 px-2 py-1 rounded-lg">
+            {filtered.length} exercícios
+          </span>
+        </div>
 
         {/* Search */}
         <div className="relative">
@@ -95,8 +157,8 @@ export default function BibliotecaPage() {
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Buscar exercício..."
-            className="w-full bg-card border border-border rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none focus:border-primary/50 transition-colors"
+            placeholder="Buscar por nome ou músculo..."
+            className="w-full bg-card border border-border rounded-xl pl-9 pr-10 py-2.5 text-sm outline-none focus:border-primary/50 transition-colors"
           />
           {search && (
             <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -105,14 +167,14 @@ export default function BibliotecaPage() {
           )}
         </div>
 
-        {/* Pattern scroll */}
-        <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-          {PATTERNS.map(p => (
+        {/* Movement chips */}
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+          {movementOptions.map(p => (
             <button
               key={p.key}
-              onClick={() => setPattern(p.key)}
+              onClick={() => setMovement(movement === p.key ? '' : p.key)}
               className={`shrink-0 text-xs font-bold px-3 py-1.5 rounded-xl border transition-all
-                ${pattern === p.key
+                ${movement === p.key
                   ? 'bg-primary text-primary-foreground border-primary'
                   : 'bg-card border-border text-muted-foreground hover:text-foreground'
                 }`}
@@ -122,16 +184,28 @@ export default function BibliotecaPage() {
           ))}
         </div>
 
-        {/* Secondary filters toggle */}
-        <button
-          onClick={() => setShowFilters(s => !s)}
-          className={`flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-xl border transition-all
-            ${hasFilters ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-card border-border text-muted-foreground'}`}
-        >
-          <Filter className="w-3.5 h-3.5" />
-          Filtros {hasFilters ? '•' : ''}
-          {showFilters ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-        </button>
+        {/* Filter toggle */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowFilters(s => !s)}
+            className={`flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-xl border transition-all
+              ${hasFilters ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-card border-border text-muted-foreground'}`}
+          >
+            <Filter className="w-3.5 h-3.5" />
+            Filtros {hasFilters ? `(${[muscle, equipment, exType, onlyBand ? 'banda' : ''].filter(Boolean).length})` : ''}
+            {showFilters ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+          </button>
+          {onlyBand && (
+            <button onClick={() => setOnlyBand(false)} className="text-xs bg-green-500/10 border border-green-500/30 text-green-400 font-bold px-2 py-1 rounded-lg flex items-center gap-1">
+              🪢 Elástico <X className="w-3 h-3" />
+            </button>
+          )}
+          {hasFilters && (
+            <button onClick={clearFilters} className="text-xs text-muted-foreground hover:text-foreground ml-auto">
+              Limpar
+            </button>
+          )}
+        </div>
 
         <AnimatePresence>
           {showFilters && (
@@ -141,30 +215,61 @@ export default function BibliotecaPage() {
               exit={{ height: 0, opacity: 0 }}
               className="overflow-hidden"
             >
-              <div className="flex gap-2 flex-wrap pt-1">
-                {LEVELS.filter(l => l.key).map(l => (
-                  <button key={l.key} onClick={() => setLevel(level === l.key ? '' : l.key)}
-                    className={`text-xs font-bold px-3 py-1.5 rounded-xl border transition-all
-                      ${level === l.key ? 'bg-primary text-primary-foreground border-primary' : 'bg-card border-border text-muted-foreground'}`}>
-                    {l.label}
-                  </button>
-                ))}
-                {EQUIPMENT.filter(e => e.key).map(e => (
-                  <button key={e.key} onClick={() => setEquipment(equipment === e.key ? '' : e.key)}
-                    className={`text-xs font-bold px-3 py-1.5 rounded-xl border transition-all
-                      ${equipment === e.key ? 'bg-primary text-primary-foreground border-primary' : 'bg-card border-border text-muted-foreground'}`}>
-                    {e.label}
-                  </button>
-                ))}
+              <div className="space-y-3 pt-1 pb-2">
+                {/* Type */}
+                <div>
+                  <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wide mb-1.5">Tipo</p>
+                  <div className="flex gap-1.5 flex-wrap">
+                    {TYPE_FILTERS.filter(f => f.key).map(f => (
+                      <button key={f.key} onClick={() => setExType(exType === f.key ? '' : f.key)}
+                        className={`text-xs font-bold px-3 py-1.5 rounded-xl border transition-all
+                          ${exType === f.key ? 'bg-primary text-primary-foreground border-primary' : 'bg-card border-border text-muted-foreground'}`}>
+                        {f.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {/* Muscle */}
+                <div>
+                  <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wide mb-1.5">Músculo</p>
+                  <div className="flex gap-1.5 flex-wrap">
+                    {MUSCLE_FILTERS.filter(f => f.key).map(f => (
+                      <button key={f.key} onClick={() => setMuscle(muscle === f.key ? '' : f.key)}
+                        className={`text-xs font-bold px-3 py-1.5 rounded-xl border transition-all
+                          ${muscle === f.key ? 'bg-primary text-primary-foreground border-primary' : 'bg-card border-border text-muted-foreground'}`}>
+                        {f.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {/* Equipment */}
+                <div>
+                  <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wide mb-1.5">Equipamento</p>
+                  <div className="flex gap-1.5 flex-wrap">
+                    {EQUIPMENT_FILTERS.filter(f => f.key).map(f => (
+                      <button key={f.key} onClick={() => setEquipment(equipment === f.key ? '' : f.key)}
+                        className={`text-xs font-bold px-3 py-1.5 rounded-xl border transition-all
+                          ${equipment === f.key ? 'bg-primary text-primary-foreground border-primary' : 'bg-card border-border text-muted-foreground'}`}>
+                        {f.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {/* Band toggle */}
+                <button
+                  onClick={() => setOnlyBand(b => !b)}
+                  className={`flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-xl border transition-all
+                    ${onlyBand ? 'bg-green-500/10 border-green-500/30 text-green-400' : 'bg-card border-border text-muted-foreground'}`}
+                >
+                  🪢 Apenas com elástico
+                </button>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
-
-        <p className="text-xs text-muted-foreground">{filtered.length} exercícios</p>
       </div>
 
-      {/* List */}
+      {/* Exercise list */}
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
           <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
@@ -174,42 +279,49 @@ export default function BibliotecaPage() {
           {filtered.map((ex, i) => (
             <motion.div
               key={ex.id}
-              initial={{ opacity: 0, y: 8 }}
+              initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: Math.min(i * 0.03, 0.3) }}
+              transition={{ delay: Math.min(i * 0.02, 0.25) }}
               className="bg-card border border-border rounded-2xl overflow-hidden"
             >
-              <button
-                className="w-full p-4 text-left"
-                onClick={() => setSelectedExercise(ex)}
-              >
-                <div className="flex items-start gap-3">
-                  {/* Thumb */}
+              <button className="w-full p-3.5 text-left" onClick={() => setSelectedExercise(ex)}>
+                <div className="flex items-center gap-3">
+                  {/* Thumb / icon */}
                   <div className="w-12 h-12 rounded-xl bg-muted/40 flex items-center justify-center shrink-0 overflow-hidden">
-                    {ex.image_url
+                    {ex.gif_url
+                      ? <img src={ex.gif_url} alt={ex.name} className="w-full h-full object-cover" />
+                      : ex.image_url
                       ? <img src={ex.image_url} alt={ex.name} className="w-full h-full object-cover" />
-                      : <span className="text-xl">💪</span>
+                      : <span className="text-xl">{PATTERN_EMOJI[ex.movement_pattern] || '💪'}</span>
                     }
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-sm">{ex.name}</p>
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      {ex.is_jota_original && (
+                        <span className="text-[9px] font-black bg-gold/20 text-gold px-1.5 py-0.5 rounded-md">JOTA</span>
+                      )}
+                      {ex.uses_band && (
+                        <span className="text-[9px] font-black bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded-md">🪢</span>
+                      )}
+                    </div>
+                    <p className="font-bold text-sm leading-tight">{ex.name}</p>
                     <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                       {ex.difficulty && (
-                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${LEVEL_BADGE[ex.difficulty] || 'bg-muted text-muted-foreground'}`}>
-                          {LEVEL_LABEL[ex.difficulty] || ex.difficulty}
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${LEVEL_BADGE[ex.difficulty]}`}>
+                          {LEVEL_LABEL[ex.difficulty]}
+                        </span>
+                      )}
+                      {(ex.primary_muscle || (ex.muscle_groups || [])[0]) && (
+                        <span className="text-[10px] text-muted-foreground">
+                          {ex.primary_muscle || ex.muscle_groups[0]}
                         </span>
                       )}
                       {ex.sets_recommended && (
-                        <span className="text-[10px] text-muted-foreground">{ex.sets_recommended}</span>
+                        <span className="text-[10px] text-muted-foreground">· {ex.sets_recommended}</span>
                       )}
                     </div>
-                    {ex.muscle_groups?.length > 0 && (
-                      <p className="text-[10px] text-muted-foreground mt-1 truncate">
-                        {ex.muscle_groups.slice(0, 3).join(' · ')}
-                      </p>
-                    )}
                   </div>
-                  <div className="flex flex-col gap-2 shrink-0">
+                  <div className="flex flex-col gap-1.5 shrink-0">
                     <button
                       onClick={e => { e.stopPropagation(); toggleFav(ex.id); }}
                       className={`p-1.5 rounded-lg transition-all ${favorites.includes(ex.id) ? 'text-red-400 bg-red-400/10' : 'text-muted-foreground hover:text-foreground'}`}
@@ -228,17 +340,19 @@ export default function BibliotecaPage() {
             </motion.div>
           ))}
 
-          {filtered.length === 0 && (
-            <div className="text-center py-16 text-muted-foreground">
-              <p className="text-3xl mb-3">🔍</p>
-              <p className="text-sm font-bold">Nenhum exercício encontrado</p>
-              <p className="text-xs mt-1">Tente outro filtro ou termo</p>
+          {filtered.length === 0 && !isLoading && (
+            <div className="text-center py-16">
+              <Dumbbell className="w-12 h-12 mx-auto mb-3 text-muted-foreground opacity-30" />
+              <p className="text-sm font-bold text-muted-foreground">Nenhum exercício encontrado</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Tente outro músculo, equipamento ou{' '}
+                <button onClick={clearFilters} className="text-primary underline">limpe os filtros</button>
+              </p>
             </div>
           )}
         </div>
       )}
 
-      {/* Detail sheet */}
       <ExerciseDetailSheet
         exercise={selectedExercise}
         open={!!selectedExercise}
@@ -248,7 +362,6 @@ export default function BibliotecaPage() {
         onToggleFav={() => selectedExercise && toggleFav(selectedExercise.id)}
       />
 
-      {/* Add to routine modal */}
       <AddToRoutineModal
         exercise={addToRoutineExercise}
         open={!!addToRoutineExercise}
