@@ -22,13 +22,14 @@ import MissionsPage from '@/pages/admin/MissionsPage';
 import CheckinPage from '@/pages/student/CheckinPage';
 import BibliotecaPage from '@/pages/student/BibliotecaPage';
 import MinhaRotina from '@/pages/student/MinhaRotina';
-import ExecutarTreino from '@/pages/student/ExecutarTreino';
+import ExecutarTreino from '@/pages/student/ExecutarTreino.jsx';
 import StudentSkillsPage from '@/pages/student/SkillsTreePage.jsx';
 import MyProfilePage from '@/pages/student/MyProfilePage';
 import ProgressoPage from '@/pages/student/ProgressoPage';
 
 // Admin pages extra
 import ChallengesPage from '@/pages/admin/ChallengesPage';
+import PainelJota from '@/pages/admin/PainelJota';
 
 // Shared
 import RankingPage from '@/pages/RankingPage';
@@ -75,6 +76,7 @@ const AuthenticatedApp = () => {
         <Route path="/admin/missions" element={<MissionsPage />} />
         <Route path="/admin/ranking" element={<RankingPage />} />
         <Route path="/admin/challenges" element={<ChallengesPage />} />
+        <Route path="/admin/painel" element={<PainelJota />} />
       </Route>
 
       {/* Public pages */}
