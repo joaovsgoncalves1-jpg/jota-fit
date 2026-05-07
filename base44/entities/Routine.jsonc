@@ -1,0 +1,46 @@
+{
+  "name": "Routine",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nome da rotina"
+    },
+    "student_email": {
+      "type": "string",
+      "description": "Email do aluno"
+    },
+    "description": {
+      "type": "string",
+      "description": "Descri\u00e7\u00e3o opcional"
+    },
+    "days_of_week": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Dias da semana: seg, ter, qua, qui, sex, sab, dom"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": false,
+      "description": "Rotina ativa"
+    },
+    "created_by": {
+      "type": "string",
+      "enum": [
+        "student",
+        "jota"
+      ],
+      "default": "student"
+    },
+    "consultant_note": {
+      "type": "string",
+      "description": "Nota do consultor"
+    }
+  },
+  "required": [
+    "name",
+    "student_email"
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "name": "RoutineExercise",
+  "type": "object",
+  "properties": {
+    "routine_id": {
+      "type": "string",
+      "description": "ID da rotina"
+    },
+    "exercise_id": {
+      "type": "string",
+      "description": "ID do exerc\u00edcio"
+    },
+    "order": {
+      "type": "number",
+      "default": 0,
+      "description": "Ordem na rotina"
+    },
+    "sets": {
+      "type": "number",
+      "description": "N\u00famero de s\u00e9ries"
+    },
+    "reps": {
+      "type": "string",
+      "description": "Repeti\u00e7\u00f5es (ex: 8-12)"
+    },
+    "rest_seconds": {
+      "type": "number",
+      "description": "Descanso em segundos"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Observa\u00e7\u00f5es do exerc\u00edcio"
+    }
+  },
+  "required": [
+    "routine_id",
+    "exercise_id"
+  ]
+}

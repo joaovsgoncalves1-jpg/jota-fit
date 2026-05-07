@@ -6,9 +6,41 @@ import { useNavigate } from 'react-router-dom';
 import { calculateLevel } from '@/lib/gamification';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
-import { Dumbbell, Target, Swords, CheckCircle, ChevronRight, Flame, Zap, Trophy } from 'lucide-react';
+import { BookOpen, ListChecks, Swords, CheckCircle, ChevronRight, Flame, Zap, TrendingUp, Play } from 'lucide-react';
 import HPBar from '@/components/game/HPBar';
 import LevelProgress from '@/components/game/LevelProgress';
+
+function ActiveRoutineCard({ navigate }) {
+  const { user } = useCurrentUser();
+  const { data: routines } = useQuery({
+    queryKey: ['my-routines', user?.email],
+    queryFn: () => base44.entities.Routine.filter({ student_email: user?.email }),
+    enabled: !!user?.email,
+  });
+  const active = (routines || []).find(r => r.is_active) || (routines || [])[0];
+  if (!active) return (
+    <button onClick={() => navigate('/rotina')} className="w-full bg-card border border-dashed border-border rounded-2xl p-5 text-center hover:border-primary/30 transition-all">
+      <ListChecks className="w-7 h-7 mx-auto mb-2 text-muted-foreground opacity-40" />
+      <p className="text-sm text-muted-foreground">Nenhuma rotina criada</p>
+      <p className="text-xs text-primary font-bold mt-1">Criar minha rotina →</p>
+    </button>
+  );
+  return (
+    <button onClick={() => navigate(`/treino/${active.id}`)}
+      className="w-full flex items-center gap-3 bg-card border border-primary/30 rounded-2xl p-4 text-left hover:border-primary/50 transition-all active:scale-[0.98]">
+      <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center shrink-0">
+        <Play className="w-6 h-6 text-primary" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="font-bold text-sm">{active.name}</p>
+        <p className="text-xs text-muted-foreground">
+          {(active.days_of_week || []).join(', ') || 'Qualquer dia'}
+        </p>
+      </div>
+      <span className="text-xs font-bold text-primary">Iniciar →</span>
+    </button>
+  );
+}
 
 export default function HomeDashboard() {
   const { user } = useCurrentUser();
@@ -18,23 +50,6 @@ export default function HomeDashboard() {
   const { data: profile } = useQuery({
     queryKey: ['my-profile', user?.email],
     queryFn: () => base44.entities.StudentProfile.filter({ email: user?.email }),
-    enabled: !!user?.email,
-  });
-
-  const { data: assignments } = useQuery({
-    queryKey: ['my-assignments', user?.email],
-    queryFn: () => base44.entities.WorkoutAssignment.filter({ student_email: user?.email }),
-    enabled: !!user?.email,
-  });
-
-  const { data: workouts } = useQuery({
-    queryKey: ['all-workouts'],
-    queryFn: () => base44.entities.Workout.list(),
-  });
-
-  const { data: workoutLogs } = useQuery({
-    queryKey: ['my-workout-logs', user?.email],
-    queryFn: () => base44.entities.WorkoutLog.filter({ student_email: user?.email }),
     enabled: !!user?.email,
   });
 
@@ -60,17 +75,6 @@ export default function HomeDashboard() {
     enabled: !!user?.email,
   });
 
-  const { data: missions } = useQuery({
-    queryKey: ['all-missions'],
-    queryFn: () => base44.entities.Mission.list(),
-  });
-
-  const { data: missionProgress } = useQuery({
-    queryKey: ['my-mission-progress', user?.email],
-    queryFn: () => base44.entities.MissionProgress.filter({ student_email: user?.email }),
-    enabled: !!user?.email,
-  });
-
   const { data: checkin } = useQuery({
     queryKey: ['checkin-today', user?.email, today],
     queryFn: () => base44.entities.Checkin.filter({ student_email: user?.email, date: today }),
@@ -80,16 +84,6 @@ export default function HomeDashboard() {
   const myProfile = profile?.[0];
   const levelInfo = calculateLevel(myProfile?.xp_total || 0);
   const checkedInToday = checkin && checkin.length > 0;
-
-  // Today workouts
-  const dayOfWeek = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][new Date().getDay()];
-  const todayAssignments = (assignments || []).filter(a => {
-    if (a.scheduled_date === today) return true;
-    if (a.recurring && a.recurring_days?.includes(dayOfWeek)) return true;
-    return false;
-  });
-  const completedTodayLogs = (workoutLogs || []).filter(l => l.completion_date === today);
-  const completedIds = new Set(completedTodayLogs.map(l => l.workout_id));
 
   // Active skill & boss
   const activeSkillProgress = skillProgress?.find(s => s.status === 'in_progress');
@@ -103,12 +97,6 @@ export default function HomeDashboard() {
       if (!bp || !bp.defeated) { activeBoss = boss; activeBossProgress = bp; break; }
     }
   }
-
-  // Next mission
-  const nextMission = (missions || []).find(m => {
-    const mp = missionProgress?.find(p => p.mission_id === m.id);
-    return !mp?.completed && (m.for_all || m.target_emails?.includes(user?.email));
-  });
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
@@ -174,49 +162,20 @@ export default function HomeDashboard() {
         {!checkedInToday && <ChevronRight className="w-5 h-5 text-primary" />}
       </motion.button>
 
-      {/* TREINO DO DIA */}
+      {/* ROTINA ATIVA */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
         <div className="flex items-center justify-between mb-2">
-          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Treino do Dia</p>
-          <button onClick={() => navigate('/treinos')} className="text-xs text-primary font-bold flex items-center gap-0.5">Ver todos <ChevronRight className="w-3 h-3" /></button>
+          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Rotina Ativa</p>
+          <button onClick={() => navigate('/rotina')} className="text-xs text-primary font-bold flex items-center gap-0.5">Ver todas <ChevronRight className="w-3 h-3" /></button>
         </div>
-        {todayAssignments.length === 0 ? (
-          <div className="bg-card border border-border rounded-2xl p-5 text-center">
-            <Dumbbell className="w-8 h-8 mx-auto mb-2 text-muted-foreground opacity-40" />
-            <p className="text-sm text-muted-foreground">Dia de descanso</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Recupere-se bem 💤</p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {todayAssignments.slice(0, 3).map(a => {
-              const w = workouts?.find(w => w.id === a.workout_id);
-              if (!w) return null;
-              const done = completedIds.has(w.id);
-              return (
-                <button key={a.id} onClick={() => navigate('/treinos')}
-                  className={`w-full flex items-center gap-3 bg-card border rounded-2xl p-4 text-left transition-all hover:border-primary/30
-                    ${done ? 'border-success/30 opacity-70' : 'border-border'}`}
-                >
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${done ? 'bg-success/20' : 'bg-primary/20'}`}>
-                    {done ? <CheckCircle className="w-5 h-5 text-success" /> : <Dumbbell className="w-5 h-5 text-primary" />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-sm">{w.name}</p>
-                    <p className="text-xs text-muted-foreground">{(w.exercises || []).length} exercícios · +{w.xp_reward || 100} XP</p>
-                  </div>
-                  {done ? <span className="text-xs text-success font-bold">✅</span> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
-                </button>
-              );
-            })}
-          </div>
-        )}
+        <ActiveRoutineCard navigate={navigate} />
       </motion.div>
 
       {/* BOSS ATUAL */}
       {activeBoss && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.13 }}>
-          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">Chefe Atual</p>
-          <button onClick={() => navigate('/skills')} className="w-full bg-card border border-destructive/20 rounded-2xl p-4 text-left hover:border-destructive/40 transition-all">
+          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">Jornada — Chefe Atual</p>
+          <button onClick={() => navigate('/jornada')} className="w-full bg-card border border-destructive/20 rounded-2xl p-4 text-left hover:border-destructive/40 transition-all">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 rounded-xl bg-destructive/20 flex items-center justify-center">
                 <Swords className="w-5 h-5 text-destructive" />
@@ -236,37 +195,20 @@ export default function HomeDashboard() {
         </motion.div>
       )}
 
-      {/* PRÓXIMA MISSÃO */}
-      {nextMission && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }}>
-          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">Próxima Missão</p>
-          <button onClick={() => navigate('/missoes')} className="w-full flex items-center gap-3 bg-card border border-border rounded-2xl p-4 text-left hover:border-primary/30 transition-all">
-            <div className="w-10 h-10 rounded-xl bg-gold/10 flex items-center justify-center shrink-0">
-              <Target className="w-5 h-5 text-gold" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-bold text-sm">{nextMission.name}</p>
-              <p className="text-xs text-muted-foreground">+{nextMission.xp_reward} XP</p>
-            </div>
-            <ChevronRight className="w-4 h-4 text-muted-foreground" />
-          </button>
-        </motion.div>
-      )}
-
       {/* ATALHOS RÁPIDOS */}
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}>
-        <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">Atalhos</p>
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }}>
+        <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">Acesso Rápido</p>
         <div className="grid grid-cols-3 gap-2">
           {[
-            { label: 'Skills', icon: '🌳', path: '/skills' },
-            { label: 'Progresso', icon: '📊', path: '/progresso' },
-            { label: 'Ranking', icon: '🏆', path: '/ranking' },
+            { label: 'Biblioteca', icon: <BookOpen className="w-6 h-6" />, path: '/biblioteca', color: 'text-blue-400' },
+            { label: 'Montar Rotina', icon: <ListChecks className="w-6 h-6" />, path: '/rotina', color: 'text-primary' },
+            { label: 'Progresso', icon: <TrendingUp className="w-6 h-6" />, path: '/progresso', color: 'text-success' },
           ].map(s => (
             <button key={s.label} onClick={() => navigate(s.path)}
               className="flex flex-col items-center gap-2 bg-card border border-border rounded-2xl p-4 hover:border-primary/30 transition-all active:scale-95"
             >
-              <span className="text-2xl">{s.icon}</span>
-              <p className="text-xs font-bold">{s.label}</p>
+              <span className={s.color}>{s.icon}</span>
+              <p className="text-xs font-bold text-center leading-tight">{s.label}</p>
             </button>
           ))}
         </div>

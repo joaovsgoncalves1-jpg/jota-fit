@@ -20,14 +20,12 @@ import MissionsPage from '@/pages/admin/MissionsPage';
 
 // Student pages
 import CheckinPage from '@/pages/student/CheckinPage';
-import StudentWorkoutsPage from '@/pages/student/StudentWorkoutsPage';
+import BibliotecaPage from '@/pages/student/BibliotecaPage';
+import MinhaRotina from '@/pages/student/MinhaRotina';
+import ExecutarTreino from '@/pages/student/ExecutarTreino';
 import StudentSkillsPage from '@/pages/student/SkillsTreePage.jsx';
-import StudentMissionsPage from '@/pages/student/StudentMissionsPage';
 import MyProfilePage from '@/pages/student/MyProfilePage';
 import ProgressoPage from '@/pages/student/ProgressoPage';
-import FeedPage from '@/pages/student/FeedPage';
-import NotificacoesPage from '@/pages/student/NotificacoesPage';
-import TrilhasPage from '@/pages/student/TrilhasPage';
 
 // Admin pages extra
 import ChallengesPage from '@/pages/admin/ChallengesPage';
@@ -89,16 +87,15 @@ const AuthenticatedApp = () => {
       {/* Student routes */}
       <Route element={<StudentLayout />}>
         <Route path="/" element={<CheckinPage />} />
-        <Route path="/treinos" element={<StudentWorkoutsPage />} />
-        <Route path="/skills" element={<StudentSkillsPage />} />
-        <Route path="/missoes" element={<StudentMissionsPage />} />
-        <Route path="/perfil" element={<MyProfilePage />} />
-        <Route path="/ranking" element={<RankingPage />} />
+        <Route path="/biblioteca" element={<BibliotecaPage />} />
+        <Route path="/rotina" element={<MinhaRotina />} />
+        <Route path="/jornada" element={<StudentSkillsPage />} />
         <Route path="/progresso" element={<ProgressoPage />} />
-        <Route path="/feed" element={<FeedPage />} />
-        <Route path="/notificacoes" element={<NotificacoesPage />} />
-        <Route path="/trilhas" element={<TrilhasPage />} />
+        <Route path="/perfil" element={<MyProfilePage />} />
       </Route>
+
+      {/* Treino execução (sem nav) */}
+      <Route path="/treino/:routineId" element={<ExecutarTreino />} />
 
       <Route path="*" element={<PageNotFound />} />
     </Routes>

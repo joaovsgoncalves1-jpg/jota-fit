@@ -8,18 +8,19 @@
     },
     "description": {
       "type": "string",
-      "description": "Descri\u00e7\u00e3o detalhada"
+      "description": "Descri\u00e7\u00e3o simples"
     },
-    "muscle_groups": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "description": "Grupos musculares trabalhados"
-    },
-    "video_url": {
+    "movement_pattern": {
       "type": "string",
-      "description": "URL do YouTube ou v\u00eddeo"
+      "enum": [
+        "puxar",
+        "empurrar",
+        "core",
+        "pernas",
+        "mobilidade",
+        "skill"
+      ],
+      "description": "Padr\u00e3o de movimento"
     },
     "difficulty": {
       "type": "string",
@@ -35,19 +36,38 @@
       "items": {
         "type": "string"
       },
-      "description": "Equipamentos necess\u00e1rios"
+      "description": "Equipamentos: sem_equipamento, barra, paralelas, elastico, argolas"
+    },
+    "muscle_groups": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Grupos musculares trabalhados"
     },
     "tips": {
       "type": "string",
-      "description": "Dicas de execu\u00e7\u00e3o"
+      "description": "Dica de execu\u00e7\u00e3o"
+    },
+    "common_mistakes": {
+      "type": "string",
+      "description": "Erros comuns"
     },
     "sets_recommended": {
       "type": "string",
-      "description": "Ex: 3x12-15"
+      "description": "Ex: 3x10-12"
     },
     "rest_seconds": {
       "type": "number",
-      "description": "Tempo de descanso sugerido em segundos"
+      "description": "Descanso sugerido em segundos"
+    },
+    "video_url": {
+      "type": "string",
+      "description": "URL do YouTube"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "URL da imagem"
     }
   },
   "required": [
