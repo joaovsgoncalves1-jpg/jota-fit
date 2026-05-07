@@ -1,0 +1,78 @@
+{
+  "name": "WeeklyPlanItem",
+  "type": "object",
+  "properties": {
+    "weekly_plan_id": {
+      "type": "string"
+    },
+    "day_of_week": {
+      "type": "string",
+      "enum": [
+        "seg",
+        "ter",
+        "qua",
+        "qui",
+        "sex",
+        "sab",
+        "dom"
+      ]
+    },
+    "item_type": {
+      "type": "string",
+      "enum": [
+        "routine",
+        "hybrid_activity",
+        "mobility",
+        "rest",
+        "recovery",
+        "skill_block"
+      ],
+      "default": "routine"
+    },
+    "routine_id": {
+      "type": "string"
+    },
+    "activity_type": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "planned_duration_minutes": {
+      "type": "number"
+    },
+    "planned_distance_km": {
+      "type": "number"
+    },
+    "planned_intensity": {
+      "type": "string",
+      "enum": [
+        "leve",
+        "moderado",
+        "intenso",
+        "maximo"
+      ]
+    },
+    "planned_time": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "planned",
+        "completed",
+        "skipped",
+        "moved"
+      ],
+      "default": "planned"
+    }
+  },
+  "required": [
+    "weekly_plan_id",
+    "day_of_week",
+    "item_type"
+  ]
+}

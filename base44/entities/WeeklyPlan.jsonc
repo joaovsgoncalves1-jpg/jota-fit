@@ -1,0 +1,39 @@
+{
+  "name": "WeeklyPlan",
+  "type": "object",
+  "properties": {
+    "student_email": {
+      "type": "string"
+    },
+    "week_start": {
+      "type": "string",
+      "format": "date"
+    },
+    "goal": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "created_by": {
+      "type": "string",
+      "enum": [
+        "student",
+        "jota"
+      ],
+      "default": "student"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "student_email",
+    "week_start"
+  ]
+}

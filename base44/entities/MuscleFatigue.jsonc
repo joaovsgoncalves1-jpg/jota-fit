@@ -1,0 +1,66 @@
+{
+  "name": "MuscleFatigue",
+  "type": "object",
+  "properties": {
+    "student_email": {
+      "type": "string"
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "muscle_group": {
+      "type": "string",
+      "enum": [
+        "pernas",
+        "quadriceps",
+        "posterior",
+        "gluteos",
+        "panturrilhas",
+        "costas",
+        "peito",
+        "ombros",
+        "biceps",
+        "triceps",
+        "core",
+        "corpo_inteiro",
+        "cardiovascular"
+      ]
+    },
+    "fatigue_score": {
+      "type": "number",
+      "description": "0-100"
+    },
+    "fatigue_level": {
+      "type": "string",
+      "enum": [
+        "baixa",
+        "moderada",
+        "alta",
+        "muito_alta"
+      ]
+    },
+    "contributors": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "last_trained_at": {
+      "type": "string",
+      "format": "date"
+    },
+    "recommendation": {
+      "type": "string"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "student_email",
+    "date",
+    "muscle_group"
+  ]
+}

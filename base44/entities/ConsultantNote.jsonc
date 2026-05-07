@@ -1,0 +1,63 @@
+{
+  "name": "ConsultantNote",
+  "type": "object",
+  "properties": {
+    "student_email": {
+      "type": "string"
+    },
+    "created_by": {
+      "type": "string"
+    },
+    "note": {
+      "type": "string"
+    },
+    "note_type": {
+      "type": "string",
+      "enum": [
+        "geral",
+        "ajuste_de_treino",
+        "feedback_tecnico",
+        "progressao",
+        "recuperacao",
+        "dieta_observacao",
+        "motivacional",
+        "alerta",
+        "revisao_semanal"
+      ],
+      "default": "geral"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "baixa",
+        "media",
+        "alta"
+      ],
+      "default": "media"
+    },
+    "related_routine_id": {
+      "type": "string"
+    },
+    "related_session_id": {
+      "type": "string"
+    },
+    "related_exercise_id": {
+      "type": "string"
+    },
+    "related_body_measurement_id": {
+      "type": "string"
+    },
+    "visible_to_student": {
+      "type": "boolean",
+      "default": true
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "student_email",
+    "note"
+  ]
+}

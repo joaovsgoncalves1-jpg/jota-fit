@@ -6,8 +6,12 @@ import { useNavigate } from 'react-router-dom';
 import { calculateLevel } from '@/lib/gamification';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
-import { BookOpen, ListChecks, TrendingUp, Play, Flame, Zap, Trophy, ChevronRight, Map } from 'lucide-react';
+import { BookOpen, ListChecks, TrendingUp, Play, Flame, Zap, Trophy, ChevronRight, Map, Activity, BarChart2 } from 'lucide-react';
 import LevelProgress from '@/components/game/LevelProgress';
+import { useMemo } from 'react';
+import { startOfWeek, addDays } from 'date-fns';
+import { fatigueLevel, FATIGUE_COLOR, FATIGUE_BG, ACTIVITY_MUSCLE_IMPACT, applyIntensityMultiplier, generateRecommendations } from '@/lib/trainingLoad';
+import RecommendationCard from '@/components/home/RecommendationCard';
 
 function ActiveRoutineCard({ navigate }) {
   const { user } = useCurrentUser();
@@ -85,6 +89,82 @@ function RecentPRCard({ email }) {
   );
 }
 
+function WeekLoadMini({ email, navigate }) {
+  const weekStart = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
+  const weekEnd = format(addDays(new Date(weekStart + 'T12:00:00'), 6), 'yyyy-MM-dd');
+
+  const { data: sessions } = useQuery({
+    queryKey: ['my-sessions', email],
+    queryFn: () => base44.entities.WorkoutSession.filter({ student_email: email }),
+    enabled: !!email,
+  });
+  const { data: activities } = useQuery({
+    queryKey: ['hybrid-activities', email],
+    queryFn: () => base44.entities.HybridActivity.filter({ student_email: email }),
+    enabled: !!email,
+  });
+
+  const weekSessions = useMemo(() =>
+    (sessions || []).filter(s => (s.finished_at || s.created_date || '').slice(0, 10) >= weekStart),
+    [sessions, weekStart]);
+  const weekActivities = useMemo(() =>
+    (activities || []).filter(a => a.date >= weekStart && a.date <= weekEnd),
+    [activities, weekStart, weekEnd]);
+
+  const totalSessions = weekSessions.length + weekActivities.length;
+  const cardioCount = weekActivities.filter(a => ['corrida', 'caminhada', 'bike', 'natacao', 'HIIT'].includes(a.activity_type)).length;
+  const legsScore = useMemo(() => {
+    let s = 0;
+    weekSessions.forEach(sess => {
+      if ((sess.routine_name || '').toLowerCase().match(/lower|perna|leg/)) s += 35;
+    });
+    weekActivities.forEach(a => {
+      if (['corrida', 'caminhada', 'bike', 'HIIT'].includes(a.activity_type)) {
+        const mult = { leve: 0.5, moderado: 1, intenso: 1.5, maximo: 2 }[a.intensity] || 1;
+        s += Math.round(30 * mult);
+      }
+    });
+    return Math.min(100, s);
+  }, [weekSessions, weekActivities]);
+
+  const recs = generateRecommendations({ pernas: legsScore }, weekSessions, weekActivities);
+
+  return (
+    <>
+      <button onClick={() => navigate('/carga-semana')}
+        className="w-full bg-card border border-border rounded-2xl p-4 text-left hover:border-primary/20 transition-all">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+            <BarChart2 className="w-3.5 h-3.5" /> Carga da Semana
+          </p>
+          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="text-center">
+            <p className="font-display font-black text-xl text-primary">{totalSessions}</p>
+            <p className="text-[10px] text-muted-foreground">sessões</p>
+          </div>
+          <div className="text-center">
+            <p className="font-display font-black text-xl text-blue-400">{cardioCount}</p>
+            <p className="text-[10px] text-muted-foreground">cardio</p>
+          </div>
+          {legsScore > 0 && (
+            <div className={`ml-auto text-right`}>
+              <p className={`text-xs font-bold ${FATIGUE_COLOR[fatigueLevel(legsScore)]}`}>
+                Pernas {fatigueLevel(legsScore)}
+              </p>
+              <p className="text-[10px] text-muted-foreground">fadiga</p>
+            </div>
+          )}
+        </div>
+      </button>
+      {recs.slice(0, 1).map((r, i) => (
+        <RecommendationCard key={i} title={r.title} message={r.message} severity={r.severity === 'low' ? 'low' : r.severity === 'high' ? 'high' : 'medium'} icon={r.icon} />
+      ))}
+    </>
+  );
+}
+
 export default function HomeDashboard() {
   const { user } = useCurrentUser();
   const navigate = useNavigate();
@@ -104,7 +184,7 @@ export default function HomeDashboard() {
   const SHORTCUTS = [
     { label: 'Biblioteca', icon: BookOpen, path: '/biblioteca', color: 'text-blue-400', bg: 'bg-blue-400/10', border: 'border-blue-400/20' },
     { label: 'Rotina', icon: ListChecks, path: '/rotina', color: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/20' },
-    { label: 'Progresso', icon: TrendingUp, path: '/progresso', color: 'text-success', bg: 'bg-success/10', border: 'border-success/20' },
+    { label: 'Semana', icon: Activity, path: '/minha-semana', color: 'text-success', bg: 'bg-success/10', border: 'border-success/20' },
     { label: 'Jornada', icon: Map, path: '/jornada', color: 'text-purple-400', bg: 'bg-purple-400/10', border: 'border-purple-400/20' },
   ];
 
@@ -152,6 +232,13 @@ export default function HomeDashboard() {
       {user?.email && (
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
           <RecentPRCard email={user.email} />
+        </motion.div>
+      )}
+
+      {/* CARGA + RECOMENDAÇÃO */}
+      {user?.email && (
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.13 }} className="space-y-2">
+          <WeekLoadMini email={user.email} navigate={navigate} />
         </motion.div>
       )}
 

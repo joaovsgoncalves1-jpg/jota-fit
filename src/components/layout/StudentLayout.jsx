@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
-  User, Home, BookOpen, ListChecks, TrendingUp, Flame
+  User, Home, ListChecks, TrendingUp, Flame, CalendarDays, BarChart2
 } from 'lucide-react';
 import { useCurrentUser } from '@/lib/useCurrentUser';
 import { useQuery } from '@tanstack/react-query';
@@ -10,9 +10,9 @@ import { calculateLevel } from '@/lib/gamification';
 
 const NAV_ITEMS = [
   { path: '/', label: 'Home', icon: Home },
-  { path: '/biblioteca', label: 'Biblioteca', icon: BookOpen },
   { path: '/rotina', label: 'Rotina', icon: ListChecks },
-  { path: '/progresso', label: 'Progresso', icon: TrendingUp },
+  { path: '/minha-semana', label: 'Semana', icon: CalendarDays },
+  { path: '/progresso', label: 'Progresso', icon: BarChart2 },
   { path: '/perfil', label: 'Perfil', icon: User },
 ];
 
