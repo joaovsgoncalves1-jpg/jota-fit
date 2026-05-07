@@ -26,6 +26,9 @@ import ExecutarTreino from '@/pages/student/ExecutarTreino.jsx';
 import StudentSkillsPage from '@/pages/student/SkillsTreePage.jsx';
 import MyProfilePage from '@/pages/student/MyProfilePage';
 import ProgressoPage from '@/pages/student/ProgressoPage';
+import RegistrarAtividade from '@/pages/student/RegistrarAtividade';
+import MinhaSemanaPlan from '@/pages/student/MinhaSemanaPlan';
+import CargaSemana from '@/pages/student/CargaSemana';
 
 // Admin pages extra
 import ChallengesPage from '@/pages/admin/ChallengesPage';
@@ -94,10 +97,13 @@ const AuthenticatedApp = () => {
         <Route path="/jornada" element={<StudentSkillsPage />} />
         <Route path="/progresso" element={<ProgressoPage />} />
         <Route path="/perfil" element={<MyProfilePage />} />
+        <Route path="/minha-semana" element={<MinhaSemanaPlan />} />
+        <Route path="/carga-semana" element={<CargaSemana />} />
       </Route>
 
-      {/* Treino execução (sem nav) */}
+      {/* Sem nav */}
       <Route path="/treino/:routineId" element={<ExecutarTreino />} />
+      <Route path="/registrar-atividade" element={<RegistrarAtividade />} />
 
       <Route path="*" element={<PageNotFound />} />
     </Routes>

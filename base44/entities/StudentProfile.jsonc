@@ -82,6 +82,153 @@
     },
     "stripe_subscription_id": {
       "type": "string"
+    },
+    "main_goal": {
+      "type": "string",
+      "enum": [
+        "hipertrofia",
+        "perda_de_gordura",
+        "recomposicao",
+        "forca",
+        "calistenia",
+        "performance",
+        "saude",
+        "condicionamento",
+        "hibrido"
+      ]
+    },
+    "secondary_goals": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "training_location": {
+      "type": "string",
+      "enum": [
+        "academia",
+        "casa",
+        "parque",
+        "misto"
+      ]
+    },
+    "available_equipment": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "injuries_or_limitations": {
+      "type": "string"
+    },
+    "medical_notes": {
+      "type": "string"
+    },
+    "experience_level_musculation": {
+      "type": "string",
+      "enum": [
+        "iniciante",
+        "intermediario",
+        "avancado"
+      ]
+    },
+    "experience_level_calisthenics": {
+      "type": "string",
+      "enum": [
+        "iniciante",
+        "intermediario",
+        "avancado"
+      ]
+    },
+    "experience_level_cardio": {
+      "type": "string",
+      "enum": [
+        "iniciante",
+        "intermediario",
+        "avancado"
+      ]
+    },
+    "current_bodyweight_kg": {
+      "type": "number"
+    },
+    "height_cm": {
+      "type": "number"
+    },
+    "birth_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "sex": {
+      "type": "string",
+      "enum": [
+        "masculino",
+        "feminino",
+        "outro"
+      ]
+    },
+    "consultant_status": {
+      "type": "string",
+      "enum": [
+        "lead",
+        "ativo",
+        "pausado",
+        "encerrado"
+      ],
+      "default": "ativo"
+    },
+    "consultation_start_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "consultation_end_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "assigned_coach": {
+      "type": "string"
+    },
+    "whatsapp": {
+      "type": "string"
+    },
+    "emergency_notes": {
+      "type": "string"
+    },
+    "preferred_training_days": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "preferred_training_time": {
+      "type": "string"
+    },
+    "weekly_training_frequency_goal": {
+      "type": "number"
+    },
+    "current_phase": {
+      "type": "string",
+      "enum": [
+        "adaptacao",
+        "hipertrofia",
+        "forca",
+        "cutting",
+        "performance",
+        "skill",
+        "manutencao",
+        "recuperacao"
+      ]
+    },
+    "phase_goal": {
+      "type": "string"
+    },
+    "onboarding_answers": {
+      "type": "object"
+    },
+    "desired_skills": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
     }
   },
   "required": [

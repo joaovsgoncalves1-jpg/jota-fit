@@ -1,0 +1,73 @@
+{
+  "name": "TrainingRecommendation",
+  "type": "object",
+  "properties": {
+    "student_email": {
+      "type": "string"
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "recommendation_type": {
+      "type": "string",
+      "enum": [
+        "reduce_intensity",
+        "change_modality",
+        "add_recovery",
+        "add_mobility",
+        "maintain_plan",
+        "rest_day",
+        "adjust_volume",
+        "move_session",
+        "skill_light_day"
+      ]
+    },
+    "title": {
+      "type": "string"
+    },
+    "message": {
+      "type": "string"
+    },
+    "reason": {
+      "type": "string"
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "default": "medium"
+    },
+    "related_muscle_group": {
+      "type": "string"
+    },
+    "related_activity_id": {
+      "type": "string"
+    },
+    "related_routine_id": {
+      "type": "string"
+    },
+    "accepted": {
+      "type": "boolean",
+      "default": false
+    },
+    "dismissed": {
+      "type": "boolean",
+      "default": false
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "student_email",
+    "date",
+    "recommendation_type",
+    "title",
+    "message"
+  ]
+}

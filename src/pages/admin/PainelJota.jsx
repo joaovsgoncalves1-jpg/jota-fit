@@ -6,8 +6,10 @@ import { format, subDays, parseISO, differenceInDays } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users, Flame, Trophy, Calendar, ChevronDown, ChevronUp,
-  Edit2, Plus, Check, X, Dumbbell, TrendingUp, Star
+  Edit2, Plus, Check, X, Dumbbell, TrendingUp, Star, MessageSquare
 } from 'lucide-react';
+import AddConsultantNoteModal from '@/components/consultant/AddConsultantNoteModal';
+import ConsultantNoteCard from '@/components/consultant/ConsultantNoteCard';
 
 const BAND_LABEL = { leve: 'Leve', medio: 'Médio', forte: 'Forte', muito_forte: 'Muito forte' };
 
@@ -63,6 +65,13 @@ function ConsultantNoteEditor({ routine, onSave }) {
 
 function StudentCard({ profile, routines, sessions, prs, allExercises }) {
   const [expanded, setExpanded] = useState(false);
+  const [showNoteModal, setShowNoteModal] = useState(false);
+
+  const { data: consultantNotes } = useQuery({
+    queryKey: ['consultant-notes', profile.email],
+    queryFn: () => base44.entities.ConsultantNote.filter({ student_email: profile.email }),
+    enabled: expanded,
+  });
   const levelInfo = calculateLevel(profile.xp_total || 0);
 
   const activeRoutine = (routines || []).find(r => r.is_active) || routines?.[0];
@@ -179,10 +188,47 @@ function StudentCard({ profile, routines, sessions, prs, allExercises }) {
                   </div>
                 </div>
               )}
+
+              {/* Notas do consultor */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                    <MessageSquare className="w-3 h-3" /> Notas do Consultor
+                  </p>
+                  <button onClick={() => setShowNoteModal(true)}
+                    className="flex items-center gap-1 text-[10px] font-bold text-primary hover:text-primary/80 transition-colors">
+                    <Plus className="w-3 h-3" /> Nova nota
+                  </button>
+                </div>
+                {(consultantNotes || []).length > 0 ? (
+                  <div className="space-y-2">
+                    {[...(consultantNotes || [])].sort((a, b) => (b.created_at || '').localeCompare(a.created_at || '')).slice(0, 3).map(note => (
+                      <ConsultantNoteCard key={note.id} note={note} />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">Nenhuma nota ainda.</p>
+                )}
+              </div>
+
+              {/* Perfil detalhado */}
+              {(profile.main_goal || profile.training_location || profile.injuries_or_limitations || profile.current_phase) && (
+                <div className="bg-muted/20 rounded-xl p-3 space-y-1.5">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Perfil de Consultoria</p>
+                  {profile.main_goal && <p className="text-xs"><span className="text-muted-foreground">Objetivo:</span> {profile.main_goal}</p>}
+                  {profile.current_phase && <p className="text-xs"><span className="text-muted-foreground">Fase:</span> {profile.current_phase}</p>}
+                  {profile.training_location && <p className="text-xs"><span className="text-muted-foreground">Local:</span> {profile.training_location}</p>}
+                  {profile.consultant_status && <p className="text-xs"><span className="text-muted-foreground">Status:</span> {profile.consultant_status}</p>}
+                  {profile.injuries_or_limitations && <p className="text-xs text-destructive/80"><span className="text-muted-foreground">Limitações:</span> {profile.injuries_or_limitations}</p>}
+                </div>
+              )}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
+      {showNoteModal && (
+        <AddConsultantNoteModal studentEmail={profile.email} onClose={() => setShowNoteModal(false)} />
+      )}
     </div>
   );
 }

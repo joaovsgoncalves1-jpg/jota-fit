@@ -1,0 +1,136 @@
+{
+  "name": "HybridActivity",
+  "type": "object",
+  "properties": {
+    "student_email": {
+      "type": "string"
+    },
+    "activity_type": {
+      "type": "string",
+      "enum": [
+        "corrida",
+        "caminhada",
+        "bike",
+        "natacao",
+        "HIIT",
+        "mobilidade",
+        "alongamento",
+        "luta",
+        "esporte",
+        "recuperacao_ativa",
+        "calistenia_tecnica",
+        "condicionamento",
+        "outro"
+      ],
+      "default": "corrida"
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "start_time": {
+      "type": "string"
+    },
+    "duration_minutes": {
+      "type": "number"
+    },
+    "distance_km": {
+      "type": "number"
+    },
+    "pace_min_per_km": {
+      "type": "number"
+    },
+    "average_speed_kmh": {
+      "type": "number"
+    },
+    "elevation_gain_m": {
+      "type": "number"
+    },
+    "average_heart_rate": {
+      "type": "number"
+    },
+    "max_heart_rate": {
+      "type": "number"
+    },
+    "calories_estimated": {
+      "type": "number"
+    },
+    "intensity": {
+      "type": "string",
+      "enum": [
+        "leve",
+        "moderado",
+        "intenso",
+        "maximo"
+      ],
+      "default": "moderado"
+    },
+    "perceived_effort": {
+      "type": "number",
+      "description": "RPE 1-10"
+    },
+    "affected_muscle_groups": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "systemic_impact": {
+      "type": "string",
+      "enum": [
+        "baixo",
+        "moderado",
+        "alto",
+        "muito_alto"
+      ],
+      "default": "moderado"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "skill_practiced": {
+      "type": "string"
+    },
+    "rounds": {
+      "type": "number"
+    },
+    "region_worked": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "manual",
+        "importado",
+        "wearable_futuro"
+      ],
+      "default": "manual"
+    },
+    "external_id": {
+      "type": "string"
+    },
+    "wearable_provider": {
+      "type": "string",
+      "enum": [
+        "apple_health",
+        "google_fit",
+        "health_connect",
+        "garmin",
+        "strava",
+        "oura",
+        "fitbit",
+        "manual"
+      ],
+      "default": "manual"
+    },
+    "imported_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "student_email",
+    "activity_type",
+    "date"
+  ]
+}

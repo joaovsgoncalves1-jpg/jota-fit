@@ -1,0 +1,87 @@
+{
+  "name": "TrainingLoad",
+  "type": "object",
+  "properties": {
+    "student_email": {
+      "type": "string"
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "period": {
+      "type": "string",
+      "enum": [
+        "daily",
+        "weekly"
+      ],
+      "default": "daily"
+    },
+    "week_start": {
+      "type": "string",
+      "format": "date"
+    },
+    "total_load_score": {
+      "type": "number"
+    },
+    "strength_load": {
+      "type": "number"
+    },
+    "cardio_load": {
+      "type": "number"
+    },
+    "skill_load": {
+      "type": "number"
+    },
+    "mobility_load": {
+      "type": "number"
+    },
+    "conditioning_load": {
+      "type": "number"
+    },
+    "systemic_fatigue_score": {
+      "type": "number"
+    },
+    "systemic_fatigue_level": {
+      "type": "string",
+      "enum": [
+        "baixa",
+        "moderada",
+        "alta",
+        "muito_alta"
+      ]
+    },
+    "legs_fatigue_score": {
+      "type": "number"
+    },
+    "back_fatigue_score": {
+      "type": "number"
+    },
+    "chest_fatigue_score": {
+      "type": "number"
+    },
+    "shoulders_fatigue_score": {
+      "type": "number"
+    },
+    "arms_fatigue_score": {
+      "type": "number"
+    },
+    "core_fatigue_score": {
+      "type": "number"
+    },
+    "cardiovascular_fatigue_score": {
+      "type": "number"
+    },
+    "fatigue_notes": {
+      "type": "string"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "student_email",
+    "date"
+  ]
+}
