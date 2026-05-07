@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
-  User, CheckCircle, Dumbbell, TreePine, Trophy, Target, Flame, TrendingUp, Users, Route
+  User, Home, Dumbbell, TreePine, Target, Flame, TrendingUp, Route
 } from 'lucide-react';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { useCurrentUser } from '@/lib/useCurrentUser';
@@ -10,11 +10,10 @@ import { base44 } from '@/api/base44Client';
 import { calculateLevel } from '@/lib/gamification';
 
 const NAV_ITEMS = [
-  { path: '/', label: 'Check-in', icon: CheckCircle },
+  { path: '/', label: 'Início', icon: Home },
   { path: '/treinos', label: 'Treinos', icon: Dumbbell },
-  { path: '/trilhas', label: 'Trilhas', icon: Route },
-  { path: '/feed', label: 'Feed', icon: Users },
   { path: '/skills', label: 'Skills', icon: TreePine },
+  { path: '/missoes', label: 'Missões', icon: Target },
   { path: '/perfil', label: 'Perfil', icon: User },
 ];
 
@@ -42,27 +41,26 @@ export default function StudentLayout() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Top Bar */}
-      <header className="sticky top-0 z-30 bg-card/80 backdrop-blur-xl border-b border-border px-4 py-3">
+      <header className="sticky top-0 z-30 bg-card/90 backdrop-blur-xl border-b border-border px-4 py-2.5">
         <div className="flex items-center justify-between max-w-lg mx-auto">
           <Link to="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center shadow-[0_0_10px_rgba(249,115,22,0.3)]">
               <Flame className="w-5 h-5 text-primary-foreground" />
             </div>
-            <span className="font-display text-sm font-bold tracking-wider">JOTA FIT</span>
+            <span className="font-display text-sm font-black tracking-widest">JOTA FIT</span>
           </Link>
-          <div className="flex items-center gap-2 text-xs">
+          <div className="flex items-center gap-1.5 text-xs">
             <NotificationBell />
-            <div className="flex items-center gap-1.5 bg-gold/10 text-gold px-2.5 py-1 rounded-full font-bold">
+            <div className="flex items-center gap-1 bg-gold/10 border border-gold/20 text-gold px-2 py-1 rounded-lg font-bold">
               <span>⚡</span>
-              <span>{myProfile?.xp_total || 0} XP</span>
+              <span>{(myProfile?.xp_total || 0).toLocaleString()}</span>
             </div>
-            <div className="flex items-center gap-1.5 bg-primary/10 text-primary px-2.5 py-1 rounded-full font-bold">
+            <div className="flex items-center gap-1 bg-primary/10 border border-primary/20 text-primary px-2 py-1 rounded-lg font-bold">
               <span>Nv.{levelInfo.level}</span>
             </div>
             {myProfile?.current_streak > 0 && (
-              <div className="flex items-center gap-1 bg-primary/10 text-primary px-2.5 py-1 rounded-full font-bold">
-                <span>🔥</span>
-                <span>{myProfile.current_streak}</span>
+              <div className="flex items-center gap-1 bg-primary/10 border border-primary/20 text-primary px-2 py-1 rounded-lg font-bold">
+                <span>🔥{myProfile.current_streak}</span>
               </div>
             )}
           </div>
@@ -75,8 +73,8 @@ export default function StudentLayout() {
       </main>
 
       {/* Bottom Nav */}
-      <nav className="fixed bottom-0 left-0 right-0 z-30 bg-card/95 backdrop-blur-xl border-t border-border">
-        <div className="flex justify-around py-2 px-1 max-w-lg mx-auto">
+      <nav className="fixed bottom-0 left-0 right-0 z-30 bg-card/95 backdrop-blur-xl border-t border-border safe-area-pb">
+        <div className="flex justify-around py-1.5 px-2 max-w-lg mx-auto">
           {NAV_ITEMS.map(item => {
             const Icon = item.icon;
             const active = item.path === '/' ? location.pathname === '/' : location.pathname.startsWith(item.path);
@@ -84,13 +82,16 @@ export default function StudentLayout() {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl text-[10px] font-medium transition-all
-                  ${active 
-                    ? 'text-primary' 
-                    : 'text-muted-foreground'
+                className={`flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl text-[10px] font-bold transition-all
+                  ${active
+                    ? 'text-primary'
+                    : 'text-muted-foreground hover:text-foreground'
                   }`}
               >
-                <Icon className={`w-5 h-5 ${active ? 'drop-shadow-[0_0_6px_hsl(var(--primary))]' : ''}`} />
+                <div className={`relative p-1.5 rounded-xl transition-all ${active ? 'bg-primary/15' : ''}`}>
+                  <Icon className={`w-5 h-5 ${active ? 'drop-shadow-[0_0_8px_hsl(var(--primary))]' : ''}`} />
+                  {active && <div className="absolute inset-0 rounded-xl bg-primary/10 blur-sm" />}
+                </div>
                 <span>{item.label}</span>
               </Link>
             );

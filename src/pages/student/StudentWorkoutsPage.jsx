@@ -13,17 +13,16 @@ import XPBadge from '@/components/game/XPBadge';
 import VictoryAnimation from '@/components/game/VictoryAnimation';
 import WorkoutTimer from '@/components/workout/WorkoutTimer';
 import ExerciseModal from '@/components/workout/ExerciseModal';
+import WorkoutRewardModal from '@/components/student/WorkoutRewardModal';
 
 export default function StudentWorkoutsPage() {
   const { user } = useCurrentUser();
   const queryClient = useQueryClient();
   const [expandedWorkout, setExpandedWorkout] = useState(null);
-  const [showXP, setShowXP] = useState(false);
-  const [xpAmount, setXpAmount] = useState(0);
   const [victory, setVictory] = useState(null);
   const [activeTimerAssignment, setActiveTimerAssignment] = useState(null);
-  const [exerciseModal, setExerciseModal] = useState(null); // exercise object
-  const [exercises, setExercises] = useState({}); // keyed by exercise_id
+  const [exerciseModal, setExerciseModal] = useState(null);
+  const [rewardModal, setRewardModal] = useState(null); // { xp, damage, boss, bossAfterHP }
   const today = format(new Date(), 'yyyy-MM-dd');
 
   const { data: assignments } = useQuery({
@@ -97,6 +96,9 @@ export default function StudentWorkoutsPage() {
       let unlockedSkillName = '';
       let defeatedBossXP = 0;
       let targetBossId = null;
+      let currentBoss = null;
+      let currentBP = null;
+      let bossHPAfter = undefined;
 
       if (workout.skill_id && damage > 0) {
         // Find the active boss for the skill
@@ -105,9 +107,12 @@ export default function StudentWorkoutsPage() {
         for (const boss of skillBosses) {
           const bp = bossProgress?.find(p => p.boss_id === boss.id);
           if (!bp || !bp.defeated) {
+            currentBoss = boss;
+            currentBP = bp;
             targetBossId = boss.id;
             const currentHP = bp ? bp.current_hp : boss.hp_total;
             const newHP = Math.max(0, currentHP - damage);
+            bossHPAfter = newHP;
 
             if (bp) {
               await base44.entities.BossProgress.update(bp.id, {
@@ -172,7 +177,10 @@ export default function StudentWorkoutsPage() {
         xp_total: (myProfile?.xp_total || 0) + totalXP,
       });
 
-      return { xp: totalXP, bossDefeated, defeatedBossName, unlockedSkillName, defeatedBossXP };
+      return {
+        xp: totalXP, bossDefeated, defeatedBossName, unlockedSkillName, defeatedBossXP,
+        damage, boss: currentBoss, bossAfterHP: bossHPAfter,
+      };
     },
     onSuccess: (data) => {
       if (data?.bossDefeated) {
@@ -182,9 +190,12 @@ export default function StudentWorkoutsPage() {
           xpBonus: data.defeatedBossXP,
         });
       }
-      setXpAmount(data?.xp || 0);
-      setShowXP(true);
-      setTimeout(() => setShowXP(false), 2000);
+      setRewardModal({
+        xp: data?.xp || 0,
+        damage: data?.damage || 0,
+        boss: data?.boss || null,
+        bossAfterHP: data?.bossAfterHP,
+      });
       queryClient.invalidateQueries();
     },
   });
@@ -196,7 +207,14 @@ export default function StudentWorkoutsPage() {
         open={!!exerciseModal}
         onClose={() => setExerciseModal(null)}
       />
-      <XPBadge amount={xpAmount} show={showXP} />
+      <WorkoutRewardModal
+        show={!!rewardModal}
+        xp={rewardModal?.xp || 0}
+        damage={rewardModal?.damage || 0}
+        boss={rewardModal?.boss}
+        bossAfterHP={rewardModal?.bossAfterHP}
+        onClose={() => setRewardModal(null)}
+      />
       <VictoryAnimation
         show={!!victory}
         bossName={victory?.bossName}
@@ -214,10 +232,12 @@ export default function StudentWorkoutsPage() {
       </div>
 
       {todayAssignments.length === 0 ? (
-        <div className="text-center py-16 text-muted-foreground">
-          <Dumbbell className="w-12 h-12 mx-auto mb-4 opacity-30" />
-          <p className="text-sm">Nenhum treino para hoje</p>
-          <p className="text-xs mt-1">Dia de descanso! Não esqueça do check-in 🔥</p>
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="w-20 h-20 rounded-2xl bg-muted/30 flex items-center justify-center mb-4">
+            <Dumbbell className="w-10 h-10 text-muted-foreground opacity-40" />
+          </div>
+          <p className="font-bold text-muted-foreground">Dia de descanso</p>
+          <p className="text-xs text-muted-foreground mt-1">Recupere-se bem. Não esqueça do check-in! 🔥</p>
         </div>
       ) : (
         <div className="space-y-3">
