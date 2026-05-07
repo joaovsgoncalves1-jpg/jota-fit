@@ -2,12 +2,13 @@ import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, Users, Dumbbell, TreePine, Target, 
-  Trophy, LogOut, Flame, Crown, Swords
+  Trophy, LogOut, Flame, Crown, Swords, Star
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 
 const NAV_ITEMS = [
   { path: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
+  { path: '/admin/painel', label: 'Painel Jota', icon: Star },
   { path: '/admin/students', label: 'Alunos', icon: Users },
   { path: '/admin/workouts', label: 'Treinos', icon: Dumbbell },
   { path: '/admin/skills', label: 'Skills', icon: TreePine },
@@ -36,7 +37,7 @@ export default function AdminLayout() {
             </div>
           </Link>
         </div>
-        <nav className="flex-1 p-4 space-y-1">
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
           {NAV_ITEMS.map(item => {
             const Icon = item.icon;
             const active = item.exact ? location.pathname === item.path : location.pathname.startsWith(item.path);
@@ -68,7 +69,7 @@ export default function AdminLayout() {
       </aside>
 
       {/* Mobile Bottom Nav */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-card border-t border-border flex justify-around py-2 px-1">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-card border-t border-border flex justify-around py-2 px-1 overflow-x-auto">
         {NAV_ITEMS.map(item => {
           const Icon = item.icon;
           const active = item.exact ? location.pathname === item.path : location.pathname.startsWith(item.path);
@@ -76,11 +77,11 @@ export default function AdminLayout() {
             <Link
               key={item.path}
               to={item.path}
-              className={`flex flex-col items-center gap-1 px-2 py-1 rounded-lg text-xs transition-all
+              className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg text-[10px] transition-all shrink-0
                 ${active ? 'text-primary' : 'text-muted-foreground'}`}
             >
               <Icon className="w-5 h-5" />
-              <span className="truncate max-w-[60px]">{item.label}</span>
+              <span className="truncate max-w-[52px]">{item.label}</span>
             </Link>
           );
         })}
