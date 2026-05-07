@@ -21,7 +21,7 @@ import MissionsPage from '@/pages/admin/MissionsPage';
 // Student pages
 import CheckinPage from '@/pages/student/CheckinPage';
 import StudentWorkoutsPage from '@/pages/student/StudentWorkoutsPage';
-import StudentSkillsPage from '@/pages/student/SkillsTreePage';
+import StudentSkillsPage from '@/pages/student/SkillsTreePage.jsx';
 import StudentMissionsPage from '@/pages/student/StudentMissionsPage';
 import MyProfilePage from '@/pages/student/MyProfilePage';
 import ProgressoPage from '@/pages/student/ProgressoPage';
