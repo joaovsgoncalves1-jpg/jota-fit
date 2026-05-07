@@ -1,10 +1,10 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/lib/useCurrentUser';
 import { format, subDays, differenceInDays, parseISO } from 'date-fns';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Scale, TrendingUp, Dumbbell, Trophy, Flame, Calendar, ChevronDown, ChevronUp, Target } from 'lucide-react';
+import { Scale, TrendingUp, Dumbbell, Trophy, Flame, Calendar, ChevronDown, ChevronUp, Target, History } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { calculateLevel } from '@/lib/gamification';
 
@@ -61,11 +61,13 @@ export default function ProgressoPage() {
     enabled: !!user?.email,
   });
 
-  const { data: sessions } = useQuery({
+  const { data: sessionsRaw } = useQuery({
     queryKey: ['my-sessions', user?.email],
     queryFn: () => base44.entities.WorkoutSession.filter({ student_email: user?.email }),
     enabled: !!user?.email,
   });
+  // Only completed sessions feed the progress model
+  const sessions = (sessionsRaw || []).filter(s => s.status === 'completed' || !s.status);
 
   const { data: prs } = useQuery({
     queryKey: ['my-prs', user?.email],
@@ -77,6 +79,14 @@ export default function ProgressoPage() {
     queryKey: ['body-measurements', user?.email],
     queryFn: () => base44.entities.BodyMeasurement.filter({ student_email: user?.email }),
     enabled: !!user?.email,
+  });
+
+  const [expandedSession, setExpandedSession] = useState(null);
+
+  const { data: allSetLogs } = useQuery({
+    queryKey: ['all-set-logs', user?.email],
+    queryFn: () => base44.entities.SetLog.filter({ student_email: user?.email }),
+    enabled: !!user?.email && activeTab === 'historico',
   });
 
   const myProfile = profile?.[0];
@@ -163,6 +173,7 @@ export default function ProgressoPage() {
     { key: 'treinos', label: 'Treinos' },
     { key: 'prs', label: 'PRs' },
     { key: 'corpo', label: 'Corpo' },
+    { key: 'historico', label: 'Histórico' },
   ];
 
   return (
@@ -408,6 +419,86 @@ export default function ProgressoPage() {
                 <Scale className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-20" />
                 <p className="text-sm text-muted-foreground">Nenhuma medição ainda</p>
                 <p className="text-xs text-muted-foreground mt-1">Registre seu peso e medidas para acompanhar evolução</p>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* HISTÓRICO TAB — SetLog por sessão */}
+        {activeTab === 'historico' && (
+          <>
+            {sessions.length > 0 ? (
+              <div className="space-y-2">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Sessões completas</p>
+                {[...sessions]
+                  .sort((a, b) => (b.finished_at || b.created_date || '').localeCompare(a.finished_at || a.created_date || ''))
+                  .slice(0, 20)
+                  .map(s => {
+                    const isExp = expandedSession === s.id;
+                    const sessionSets = (allSetLogs || []).filter(l => l.session_id === s.id)
+                      .sort((a, b) => a.set_number - b.set_number);
+                    const groupedByExercise = sessionSets.reduce((acc, l) => {
+                      if (!acc[l.exercise_name]) acc[l.exercise_name] = [];
+                      acc[l.exercise_name].push(l);
+                      return acc;
+                    }, {});
+                    return (
+                      <div key={s.id} className="bg-card border border-border rounded-2xl overflow-hidden">
+                        <button onClick={() => setExpandedSession(isExp ? null : s.id)}
+                          className="w-full flex items-center justify-between px-4 py-3 text-left">
+                          <div>
+                            <p className="font-bold text-sm">{s.routine_name || 'Treino'}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {(s.finished_at || s.created_date || '').slice(0, 10)}
+                              {s.duration_minutes ? ` · ${s.duration_minutes}'` : ''}
+                              {s.sets_completed ? ` · ${s.sets_completed} séries` : ''}
+                              {s.total_volume_kg > 0 ? ` · ${s.total_volume_kg}kg` : ''}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            {s.xp_earned > 0 && <span className="text-xs font-bold text-gold">+{s.xp_earned} XP</span>}
+                            {s.prs_count > 0 && <span className="text-xs font-bold text-gold">🏆×{s.prs_count}</span>}
+                            {isExp ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+                          </div>
+                        </button>
+                        <AnimatePresence>
+                          {isExp && (
+                            <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="overflow-hidden">
+                              <div className="border-t border-border/40 px-4 pb-3 pt-2 space-y-3">
+                                {sessionSets.length === 0 && (
+                                  <p className="text-xs text-muted-foreground">Sem séries registradas (sessão anterior)</p>
+                                )}
+                                {Object.entries(groupedByExercise).map(([exName, sets]) => (
+                                  <div key={exName}>
+                                    <p className="text-xs font-bold mb-1">{exName}</p>
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {sets.map((sl, i) => (
+                                        <span key={sl.id}
+                                          className={`text-[10px] font-bold px-2 py-1 rounded-lg border
+                                            ${sl.is_pr ? 'bg-gold/15 border-gold/30 text-gold' : 'bg-muted/30 border-border/40 text-muted-foreground'}`}>
+                                          {sl.is_pr && '🏆 '}
+                                          {sl.weight_kg ? `${sl.weight_kg}kg×${sl.reps}` :
+                                           sl.reps ? `${sl.reps}r` :
+                                           sl.duration_seconds ? `${sl.duration_seconds}s` : '—'}
+                                          {sl.band_assistance_level ? ` [${sl.band_assistance_level}]` : ''}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    );
+                  })}
+              </div>
+            ) : (
+              <div className="text-center py-16">
+                <History className="w-14 h-14 mx-auto mb-4 text-muted-foreground opacity-20" />
+                <p className="font-bold text-base mb-1">Nenhuma sessão ainda</p>
+                <p className="text-sm text-muted-foreground">Seu histórico completo aparecerá aqui</p>
               </div>
             )}
           </>

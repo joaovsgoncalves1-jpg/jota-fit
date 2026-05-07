@@ -65,6 +65,16 @@ export const CATEGORY_LABELS = {
   flexibilidade: 'Flexibilidade',
 };
 
+/**
+ * XP earned per workout session.
+ * Formula: base por série + bônus por volume + bônus por PR
+ * Gamification hooks should react to WorkoutSession.status === 'completed'
+ * and WorkoutSession.xp_earned to credit the student.
+ */
+export function calcSessionXP(setsCount, volumeKg, prsCount = 0) {
+  return Math.min(300, Math.max(50, Math.round(setsCount * 7 + volumeKg * 0.05 + prsCount * 25)));
+}
+
 export const RARITY_COLORS = {
   common: 'text-muted-foreground',
   rare: 'text-blue-400',
