@@ -2,15 +2,30 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/lib/useCurrentUser';
-import { format, subDays } from 'date-fns';
+import { format, subDays, differenceInDays, parseISO } from 'date-fns';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Scale, TrendingUp, Trophy, Flame, Dumbbell, ChevronDown, ChevronUp } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Scale, TrendingUp, Dumbbell, Trophy, Flame, Calendar, ChevronDown, ChevronUp, Target } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { calculateLevel } from '@/lib/gamification';
 
-const FIELDS = [
+const CHART_STYLE = {
+  grid: { stroke: 'hsl(0 0% 16%)', strokeDasharray: '3 3' },
+  axis: { tick: { fill: 'hsl(0 0% 60%)', fontSize: 10 }, axisLine: { stroke: 'hsl(0 0% 16%)' }, tickLine: false },
+};
+
+const CustomTooltip = ({ active, payload, label }) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="bg-card border border-border rounded-xl px-3 py-2 shadow-xl text-xs">
+      <p className="text-muted-foreground mb-1">{label}</p>
+      {payload.map(p => (
+        <p key={p.dataKey} className="font-bold" style={{ color: p.color }}>{p.value} {p.unit || ''}</p>
+      ))}
+    </div>
+  );
+};
+
+const BODY_FIELDS = [
   { key: 'weight_kg', label: 'Peso', unit: 'kg', emoji: '⚖️' },
   { key: 'body_fat_pct', label: 'Gordura', unit: '%', emoji: '📊' },
   { key: 'arm_circumference', label: 'Bíceps', unit: 'cm', emoji: '💪' },
@@ -19,36 +34,26 @@ const FIELDS = [
   { key: 'leg_circumference', label: 'Coxa', unit: 'cm', emoji: '🦵' },
 ];
 
-const CustomTooltip = ({ active, payload, label }) => {
-  if (!active || !payload?.length) return null;
+function StatCard({ emoji, label, value, sub, color = 'text-foreground' }) {
   return (
-    <div className="bg-card border border-border rounded-xl px-3 py-2 shadow-xl">
-      <p className="text-xs text-muted-foreground mb-1">{label}</p>
-      {payload.map(p => (
-        <p key={p.dataKey} className="text-sm font-bold" style={{ color: p.color }}>{p.value}</p>
-      ))}
+    <div className="bg-card border border-border rounded-2xl p-3 text-center">
+      <p className="text-xl mb-1">{emoji}</p>
+      <p className={`font-display font-black text-lg leading-tight ${color}`}>{value}</p>
+      {sub && <p className="text-[10px] text-muted-foreground mt-0.5">{sub}</p>}
+      <p className="text-[10px] text-muted-foreground">{label}</p>
     </div>
   );
-};
-
-const PR_TYPE_LABEL = {
-  max_weight: '⚖️ Maior carga',
-  max_reps: '💪 Maior reps',
-  max_volume: '📈 Maior volume',
-  max_duration: '⏱ Maior tempo',
-  first_rep: '🎉 Primeira vez',
-  band_reduction: '🪢 Elástico mais leve',
-  first_without_band: '🔓 Sem elástico',
-};
+}
 
 export default function ProgressoPage() {
   const { user } = useCurrentUser();
   const queryClient = useQueryClient();
   const today = format(new Date(), 'yyyy-MM-dd');
-  const [selectedDate, setSelectedDate] = useState(today);
+
+  const [activeTab, setActiveTab] = useState('treinos');
+  const [showMeasureForm, setShowMeasureForm] = useState(false);
   const [formData, setFormData] = useState({});
-  const [showForm, setShowForm] = useState(false);
-  const [activeTab, setActiveTab] = useState('resumo');
+  const [selectedDate, setSelectedDate] = useState(today);
 
   const { data: profile } = useQuery({
     queryKey: ['my-profile', user?.email],
@@ -68,10 +73,83 @@ export default function ProgressoPage() {
     enabled: !!user?.email,
   });
 
-  const { data: measurements, refetch: refetchMeasurements } = useQuery({
+  const { data: measurements } = useQuery({
     queryKey: ['body-measurements', user?.email],
     queryFn: () => base44.entities.BodyMeasurement.filter({ student_email: user?.email }),
     enabled: !!user?.email,
+  });
+
+  const myProfile = profile?.[0];
+  const levelInfo = calculateLevel(myProfile?.xp_total || 0);
+
+  // Compute weekly sessions
+  const weeklyData = useMemo(() => {
+    const weeks = Array.from({ length: 8 }, (_, i) => {
+      const weekStart = subDays(new Date(), (7 - i) * 7);
+      const weekEnd = subDays(new Date(), (6 - i) * 7);
+      const label = format(weekStart, 'dd/MM');
+      const count = (sessions || []).filter(s => {
+        const d = s.finished_at?.slice(0, 10) || s.created_date?.slice(0, 10) || '';
+        return d >= format(weekStart, 'yyyy-MM-dd') && d <= format(weekEnd, 'yyyy-MM-dd');
+      }).length;
+      return { label, treinos: count };
+    });
+    return weeks;
+  }, [sessions]);
+
+  // Volume data
+  const volumeData = useMemo(() => {
+    return (sessions || [])
+      .filter(s => s.total_volume_kg > 0)
+      .sort((a, b) => (a.created_date || '').localeCompare(b.created_date || ''))
+      .slice(-10)
+      .map(s => ({
+        label: (s.finished_at || s.created_date || '').slice(5, 10),
+        volume: s.total_volume_kg || 0,
+      }));
+  }, [sessions]);
+
+  // Measurements
+  const sortedMeasurements = useMemo(
+    () => [...(measurements || [])].sort((a, b) => (a.date || '').localeCompare(b.date || '')),
+    [measurements]
+  );
+  const latestMeasure = sortedMeasurements[sortedMeasurements.length - 1];
+  const firstMeasure = sortedMeasurements[0];
+
+  const weightData = useMemo(() => {
+    return sortedMeasurements
+      .filter(m => m.weight_kg)
+      .slice(-12)
+      .map(m => ({ label: m.date?.slice(5), peso: m.weight_kg }));
+  }, [sortedMeasurements]);
+
+  // Stats
+  const totalSessions = sessions?.length || 0;
+  const thisWeekSessions = (sessions || []).filter(s => {
+    const d = s.finished_at?.slice(0, 10) || '';
+    return d >= format(subDays(new Date(), 7), 'yyyy-MM-dd');
+  }).length;
+  const streak = myProfile?.current_streak || 0;
+  const maxStreak = myProfile?.max_streak || 0;
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const existing = measurements?.find(m => m.date === selectedDate);
+      const numericData = {};
+      BODY_FIELDS.forEach(f => {
+        const v = parseFloat(formData[f.key]);
+        if (!isNaN(v)) numericData[f.key] = v;
+      });
+      const payload = { ...numericData, notes: formData.notes, student_email: user?.email, date: selectedDate };
+      if (existing) return base44.entities.BodyMeasurement.update(existing.id, payload);
+      return base44.entities.BodyMeasurement.create(payload);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['body-measurements'] });
+      setShowMeasureForm(false);
+      setFormData({});
+    },
   });
 
   React.useEffect(() => {
@@ -79,335 +157,262 @@ export default function ProgressoPage() {
     setFormData(existing || {});
   }, [selectedDate, measurements]);
 
-  const myProfile = profile?.[0];
-  const levelInfo = calculateLevel(myProfile?.xp_total || 0);
-
-  const sortedSessions = useMemo(() =>
-    [...(sessions || [])].sort((a, b) => (b.started_at || '').localeCompare(a.started_at || '')),
-    [sessions]
-  );
-
-  const sortedPRs = useMemo(() =>
-    [...(prs || [])].sort((a, b) => (b.achieved_at || '').localeCompare(a.achieved_at || '')),
-    [prs]
-  );
-
-  // Weekly volume data
-  const weeklyData = useMemo(() => {
-    return Array.from({ length: 7 }, (_, i) => {
-      const d = format(subDays(new Date(), 6 - i), 'yyyy-MM-dd');
-      const label = format(subDays(new Date(), 6 - i), 'dd/MM');
-      const daySessions = (sessions || []).filter(s => s.started_at?.slice(0, 10) === d);
-      const volume = daySessions.reduce((acc, s) => acc + (s.total_volume_kg || 0), 0);
-      const trained = daySessions.length > 0;
-      return { label, volume: Math.round(volume), trained };
-    });
-  }, [sessions]);
-
-  const sorted = useMemo(() => [...(measurements || [])].sort((a, b) => a.date?.localeCompare(b.date || '')), [measurements]);
-  const first = sorted[0];
-  const latest = sorted[sorted.length - 1];
-
-  const weightData = useMemo(() => {
-    return sorted.filter(m => m.weight_kg).slice(-30).map(m => ({
-      date: m.date?.slice(5) || '',
-      peso: m.weight_kg,
-    }));
-  }, [sorted]);
-
-  const saveMutation = useMutation({
-    mutationFn: async (data) => {
-      const existing = measurements?.find(m => m.date === selectedDate);
-      const payload = { ...data, student_email: user?.email, date: selectedDate };
-      if (existing) return base44.entities.BodyMeasurement.update(existing.id, payload);
-      return base44.entities.BodyMeasurement.create(payload);
-    },
-    onSuccess: () => {
-      refetchMeasurements();
-      setShowForm(false);
-    },
-  });
-
-  const handleSave = () => {
-    const numericData = {};
-    FIELDS.forEach(f => {
-      const v = parseFloat(formData[f.key]);
-      if (!isNaN(v)) numericData[f.key] = v;
-    });
-    saveMutation.mutate({ ...numericData, notes: formData.notes });
-  };
-
-  const totalSessions = sessions?.length || 0;
-  const totalSets = sortedSessions.reduce((acc, s) => acc + (s.sets_completed || 0), 0);
-  const totalVolume = sortedSessions.reduce((acc, s) => acc + (s.total_volume_kg || 0), 0);
+  const recentPRs = [...(prs || [])].sort((a, b) => (b.achieved_at || '').localeCompare(a.achieved_at || '')).slice(0, 5);
 
   const TABS = [
-    { key: 'resumo', label: '📊 Resumo' },
-    { key: 'prs', label: '🏆 PRs' },
-    { key: 'historico', label: '📋 Histórico' },
-    { key: 'corpo', label: '⚖️ Corpo' },
+    { key: 'treinos', label: 'Treinos' },
+    { key: 'prs', label: 'PRs' },
+    { key: 'corpo', label: 'Corpo' },
   ];
 
   return (
-    <div className="max-w-lg mx-auto pb-8">
+    <div className="max-w-lg mx-auto pb-10">
+      {/* Header */}
       <div className="px-4 pt-4 pb-3">
-        <h1 className="font-display text-xl font-black mb-3">PROGRESSO</h1>
-
-        {/* Tabs */}
-        <div className="flex gap-1 bg-muted/20 rounded-xl p-1">
-          {TABS.map(t => (
-            <button key={t.key} onClick={() => setActiveTab(t.key)}
-              className={`flex-1 text-[10px] font-bold py-2 rounded-lg transition-all
-                ${activeTab === t.key ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}>
-              {t.label}
-            </button>
-          ))}
-        </div>
+        <h1 className="font-display text-xl font-black">PROGRESSO</h1>
+        <p className="text-xs text-muted-foreground">Sua evolução real ao longo do tempo</p>
       </div>
 
-      {/* RESUMO */}
-      {activeTab === 'resumo' && (
-        <div className="px-4 space-y-4">
-          {/* Stats grid */}
-          <div className="grid grid-cols-2 gap-2">
-            <div className="bg-card border border-border rounded-2xl p-4">
-              <p className="text-xs text-muted-foreground">Treinos</p>
-              <p className="font-display font-black text-2xl text-primary">{totalSessions}</p>
-              <p className="text-xs text-muted-foreground">concluídos</p>
-            </div>
-            <div className="bg-card border border-border rounded-2xl p-4">
-              <p className="text-xs text-muted-foreground">Streak</p>
-              <div className="flex items-center gap-1">
-                <Flame className="w-4 h-4 text-primary" />
-                <p className="font-display font-black text-2xl text-primary">{myProfile?.current_streak || 0}</p>
-              </div>
-              <p className="text-xs text-muted-foreground">dias seguidos</p>
-            </div>
-            <div className="bg-card border border-border rounded-2xl p-4">
-              <p className="text-xs text-muted-foreground">Volume total</p>
-              <p className="font-display font-black text-2xl text-gold">{Math.round(totalVolume).toLocaleString()}</p>
-              <p className="text-xs text-muted-foreground">kg levantados</p>
-            </div>
-            <div className="bg-card border border-border rounded-2xl p-4">
-              <p className="text-xs text-muted-foreground">Nível</p>
-              <p className="font-display font-black text-2xl text-foreground">{levelInfo.level}</p>
-              <p className="text-xs text-muted-foreground">{levelInfo.title}</p>
-            </div>
-          </div>
+      {/* Summary stats */}
+      <div className="px-4 grid grid-cols-4 gap-2 mb-4">
+        <StatCard emoji="🏋️" label="Treinos" value={totalSessions} color="text-primary" />
+        <StatCard emoji="🔥" label="Streak" value={streak} sub={`max ${maxStreak}`} color="text-primary" />
+        <StatCard emoji="⚡" label="XP" value={(myProfile?.xp_total || 0).toLocaleString()} color="text-gold" />
+        <StatCard emoji="🏆" label="PRs" value={prs?.length || 0} color="text-gold" />
+      </div>
 
-          {/* Weekly volume */}
-          {weeklyData.some(d => d.volume > 0) && (
-            <div className="bg-card border border-border rounded-2xl p-4">
-              <p className="text-sm font-bold mb-3 flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-primary" /> Volume — últimos 7 dias
-              </p>
-              <ResponsiveContainer width="100%" height={140}>
-                <BarChart data={weeklyData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
-                  <CartesianGrid stroke="hsl(0 0% 16%)" strokeDasharray="3 3" />
-                  <XAxis dataKey="label" tick={{ fill: 'hsl(0 0% 64%)', fontSize: 10 }} axisLine={false} />
-                  <YAxis tick={{ fill: 'hsl(0 0% 64%)', fontSize: 10 }} axisLine={false} />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Bar dataKey="volume" name="Volume (kg)" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-
-          {/* Recent PRs preview */}
-          {sortedPRs.length > 0 && (
-            <div className="bg-card border border-border rounded-2xl p-4">
-              <p className="text-sm font-bold mb-3 flex items-center gap-2">
-                <Trophy className="w-4 h-4 text-gold" /> PRs Recentes
-              </p>
-              <div className="space-y-2">
-                {sortedPRs.slice(0, 3).map((pr, i) => (
-                  <div key={i} className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs font-bold">{pr.exercise_name}</p>
-                      <p className="text-[10px] text-muted-foreground">{PR_TYPE_LABEL[pr.record_type]}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs font-bold text-gold">
-                        {pr.weight_kg ? `${pr.weight_kg}kg × ${pr.reps}` :
-                         pr.reps ? `${pr.reps} reps` :
-                         pr.duration_seconds ? `${pr.duration_seconds}s` : pr.context || '—'}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground">{pr.achieved_at}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              {sortedPRs.length > 3 && (
-                <button onClick={() => setActiveTab('prs')} className="text-xs text-primary font-bold mt-2">
-                  Ver todos →
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* PRs */}
-      {activeTab === 'prs' && (
-        <div className="px-4 space-y-3">
-          {sortedPRs.length === 0 ? (
-            <div className="text-center py-16">
-              <Trophy className="w-12 h-12 mx-auto mb-3 text-muted-foreground opacity-20" />
-              <p className="text-sm font-bold text-muted-foreground">Seus PRs aparecerão aqui</p>
-              <p className="text-xs text-muted-foreground mt-1">Registre seus treinos para acompanhar evolução</p>
-            </div>
-          ) : sortedPRs.map((pr, i) => (
-            <motion.div key={i} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}
-              className="bg-card border border-gold/20 rounded-2xl p-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gold/15 flex items-center justify-center shrink-0">
-                <Trophy className="w-5 h-5 text-gold" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-bold text-sm truncate">{pr.exercise_name}</p>
-                <p className="text-[10px] text-gold font-bold">{PR_TYPE_LABEL[pr.record_type] || pr.record_type}</p>
-              </div>
-              <div className="text-right shrink-0">
-                <p className="text-sm font-black text-gold">
-                  {pr.weight_kg ? `${pr.weight_kg}kg` : pr.reps ? `${pr.reps} reps` :
-                   pr.duration_seconds ? `${pr.duration_seconds}s` : '✓'}
-                </p>
-                {pr.weight_kg && pr.reps && <p className="text-[10px] text-muted-foreground">× {pr.reps} reps</p>}
-                <p className="text-[10px] text-muted-foreground">{pr.achieved_at}</p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      )}
-
-      {/* HISTÓRICO */}
-      {activeTab === 'historico' && (
-        <div className="px-4 space-y-3">
-          {sortedSessions.length === 0 ? (
-            <div className="text-center py-16">
-              <Dumbbell className="w-12 h-12 mx-auto mb-3 text-muted-foreground opacity-20" />
-              <p className="text-sm font-bold text-muted-foreground">Nenhum treino registrado</p>
-              <p className="text-xs text-muted-foreground mt-1">Conclua seu primeiro treino para ver o histórico</p>
-            </div>
-          ) : sortedSessions.map((s, i) => (
-            <motion.div key={i} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.03, 0.2) }}
-              className="bg-card border border-border rounded-2xl p-4">
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <p className="font-bold text-sm">{s.routine_name || 'Treino'}</p>
-                  <p className="text-xs text-muted-foreground">{s.started_at?.slice(0, 10) || '—'}</p>
-                </div>
-                <span className="text-xs font-bold text-gold bg-gold/10 border border-gold/20 px-2 py-0.5 rounded-lg">+{s.xp_earned || 0} XP</span>
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                <div className="text-center">
-                  <p className="font-display font-black text-base text-foreground">{s.duration_minutes || '—'}'</p>
-                  <p className="text-[10px] text-muted-foreground">Duração</p>
-                </div>
-                <div className="text-center">
-                  <p className="font-display font-black text-base text-foreground">{s.sets_completed || '—'}</p>
-                  <p className="text-[10px] text-muted-foreground">Séries</p>
-                </div>
-                <div className="text-center">
-                  <p className="font-display font-black text-base text-primary">{s.total_volume_kg || '—'}kg</p>
-                  <p className="text-[10px] text-muted-foreground">Volume</p>
-                </div>
-              </div>
-              {s.prs_count > 0 && (
-                <div className="mt-2 flex items-center gap-1 text-xs text-gold font-bold">
-                  <Trophy className="w-3 h-3" /> {s.prs_count} PR{s.prs_count > 1 ? 's' : ''} nesse treino!
-                </div>
-              )}
-            </motion.div>
-          ))}
-        </div>
-      )}
-
-      {/* CORPO */}
-      {activeTab === 'corpo' && (
-        <div className="px-4 space-y-4">
-          {/* Form toggle */}
-          <button onClick={() => setShowForm(s => !s)}
-            className="w-full flex items-center justify-between bg-card border border-border rounded-2xl p-4 hover:border-primary/30 transition-all">
-            <div className="flex items-center gap-2">
-              <Scale className="w-4 h-4 text-primary" />
-              <span className="text-sm font-bold">{measurements?.some(m => m.date === today) ? '✏️ Editar medição' : '➕ Registrar medição'}</span>
-            </div>
-            {showForm ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+      {/* Tabs */}
+      <div className="flex gap-1 bg-muted/30 rounded-xl p-1 mx-4 mb-4">
+        {TABS.map(tab => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={`flex-1 text-xs font-bold py-2 rounded-lg transition-all
+              ${activeTab === tab.key ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+          >
+            {tab.label}
           </button>
+        ))}
+      </div>
 
-          <AnimatePresence>
-            {showForm && (
-              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-                className="bg-card border border-border rounded-2xl p-4 space-y-4">
-                <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">Data</label>
-                  <Input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)}
-                    className="bg-secondary border-border rounded-xl" />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  {FIELDS.map(f => (
-                    <div key={f.key}>
-                      <label className="text-xs text-muted-foreground mb-1 block">{f.emoji} {f.label} ({f.unit})</label>
-                      <Input type="number" step="0.1" placeholder="—"
-                        value={formData[f.key] || ''}
-                        onChange={e => setFormData(p => ({ ...p, [f.key]: e.target.value }))}
-                        className="bg-secondary border-border rounded-xl text-center" />
-                    </div>
-                  ))}
-                </div>
-                <Button onClick={handleSave} disabled={saveMutation.isPending}
-                  className="w-full h-12 rounded-2xl font-bold">
-                  {saveMutation.isPending ? 'Salvando...' : 'Salvar'}
-                </Button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Weight chart */}
-          {weightData.length > 1 && (
-            <div className="bg-card border border-border rounded-2xl p-4">
-              <p className="text-sm font-bold mb-3">⚖️ Evolução do Peso</p>
-              <ResponsiveContainer width="100%" height={160}>
-                <LineChart data={weightData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
-                  <CartesianGrid stroke="hsl(0 0% 16%)" strokeDasharray="3 3" />
-                  <XAxis dataKey="date" tick={{ fill: 'hsl(0 0% 64%)', fontSize: 10 }} axisLine={false} />
-                  <YAxis tick={{ fill: 'hsl(0 0% 64%)', fontSize: 10 }} axisLine={false} />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Line type="monotone" dataKey="peso" stroke="#D4A853" strokeWidth={2.5}
-                    dot={{ fill: '#D4A853', r: 3 }} activeDot={{ r: 5 }} unit="kg" />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-
-          {/* Latest stats */}
-          {latest && (
-            <div className="grid grid-cols-3 gap-2">
-              {FIELDS.filter(f => latest[f.key]).map(f => (
-                <div key={f.key} className="bg-card border border-border rounded-2xl p-3 text-center">
-                  <p className="text-lg">{f.emoji}</p>
-                  <p className="font-display font-black text-gold text-base">
-                    {latest[f.key]}<span className="text-xs font-normal text-muted-foreground ml-0.5">{f.unit}</span>
+      <div className="px-4 space-y-4">
+        {/* TREINOS TAB */}
+        {activeTab === 'treinos' && (
+          <>
+            {/* Weekly frequency */}
+            {totalSessions > 0 ? (
+              <>
+                <div className="bg-card border border-border rounded-2xl p-4">
+                  <p className="text-sm font-bold mb-1 flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-primary" /> Frequência Semanal
                   </p>
-                  <p className="text-[10px] text-muted-foreground">{f.label}</p>
-                  {first && first.id !== latest.id && first[f.key] && (
-                    <p className={`text-[10px] font-bold mt-0.5 ${latest[f.key] > first[f.key] ? 'text-success' : 'text-destructive'}`}>
-                      {latest[f.key] > first[f.key] ? '+' : ''}{(latest[f.key] - first[f.key]).toFixed(1)}
-                    </p>
-                  )}
+                  <p className="text-xs text-muted-foreground mb-3">{thisWeekSessions} treino(s) esta semana</p>
+                  <ResponsiveContainer width="100%" height={140}>
+                    <BarChart data={weeklyData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
+                      <CartesianGrid {...CHART_STYLE.grid} />
+                      <XAxis dataKey="label" {...CHART_STYLE.axis} />
+                      <YAxis {...CHART_STYLE.axis} allowDecimals={false} />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Bar dataKey="treinos" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} unit=" treinos" name="Treinos" />
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
-              ))}
-            </div>
-          )}
 
-          {sorted.length === 0 && (
-            <div className="text-center py-12">
-              <Scale className="w-12 h-12 mx-auto mb-3 opacity-20" />
-              <p className="text-sm text-muted-foreground">Registre sua primeira medição</p>
-            </div>
-          )}
-        </div>
-      )}
+                {/* Volume chart */}
+                {volumeData.length > 1 && (
+                  <div className="bg-card border border-border rounded-2xl p-4">
+                    <p className="text-sm font-bold mb-3 flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4 text-success" /> Volume Total (kg)
+                    </p>
+                    <ResponsiveContainer width="100%" height={140}>
+                      <LineChart data={volumeData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
+                        <CartesianGrid {...CHART_STYLE.grid} />
+                        <XAxis dataKey="label" {...CHART_STYLE.axis} />
+                        <YAxis {...CHART_STYLE.axis} />
+                        <Tooltip content={<CustomTooltip />} />
+                        <Line type="monotone" dataKey="volume" stroke="hsl(var(--chart-2))" strokeWidth={2.5}
+                          dot={{ fill: 'hsl(var(--chart-2))', r: 4 }} unit="kg" name="Volume" />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+
+                {/* Recent sessions */}
+                <div className="bg-card border border-border rounded-2xl p-4">
+                  <p className="text-sm font-bold mb-3 flex items-center gap-2">
+                    <Dumbbell className="w-4 h-4 text-primary" /> Treinos Recentes
+                  </p>
+                  <div className="space-y-2">
+                    {[...(sessions || [])].sort((a, b) => (b.created_date || '').localeCompare(a.created_date || '')).slice(0, 8).map(s => (
+                      <div key={s.id} className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-bold">{s.routine_name || 'Treino'}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {s.finished_at?.slice(0, 10) || s.created_date?.slice(0, 10)} ·{' '}
+                            {s.duration_minutes ? `${s.duration_minutes}'` : ''}{' '}
+                            {s.sets_completed ? `· ${s.sets_completed} séries` : ''}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          {s.xp_earned && <p className="text-xs font-bold text-gold">+{s.xp_earned} XP</p>}
+                          {s.total_volume_kg > 0 && <p className="text-[10px] text-muted-foreground">{s.total_volume_kg}kg</p>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-16">
+                <Dumbbell className="w-14 h-14 mx-auto mb-4 text-muted-foreground opacity-20" />
+                <p className="font-bold text-base mb-1">Nenhum treino concluído ainda</p>
+                <p className="text-sm text-muted-foreground">Após o primeiro treino, sua evolução aparecerá aqui</p>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* PRs TAB */}
+        {activeTab === 'prs' && (
+          <>
+            {recentPRs.length > 0 ? (
+              <div className="space-y-2">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Seus recordes pessoais</p>
+                {recentPRs.map((pr, i) => {
+                  const label = () => {
+                    if (pr.record_type === 'max_weight') return `${pr.weight_kg}kg × ${pr.reps} reps`;
+                    if (pr.record_type === 'max_reps') return `${pr.reps} reps`;
+                    if (pr.record_type === 'max_duration') return `${pr.duration_seconds}s`;
+                    if (pr.record_type === 'band_reduction') return `Elástico ${pr.band_level}`;
+                    if (pr.record_type === 'first_without_band') return '🎉 Primeira sem elástico!';
+                    return pr.context || '—';
+                  };
+                  return (
+                    <motion.div key={pr.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
+                      className="flex items-center gap-3 bg-card border border-gold/20 rounded-2xl p-3.5">
+                      <div className="w-10 h-10 rounded-xl bg-gold/15 flex items-center justify-center shrink-0">
+                        <Trophy className="w-5 h-5 text-gold" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-sm truncate">{pr.exercise_name}</p>
+                        <p className="text-xs text-gold font-bold">{label()}</p>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground shrink-0">{pr.achieved_at}</p>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-16">
+                <Trophy className="w-14 h-14 mx-auto mb-4 text-muted-foreground opacity-20" />
+                <p className="font-bold text-base mb-1">Nenhum PR registrado ainda</p>
+                <p className="text-sm text-muted-foreground">Seus recordes aparecerão aqui conforme você treina</p>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* CORPO TAB */}
+        {activeTab === 'corpo' && (
+          <>
+            {/* Measure form toggle */}
+            <button onClick={() => setShowMeasureForm(s => !s)}
+              className="w-full flex items-center justify-between bg-card border border-border rounded-2xl p-4 hover:border-primary/30 transition-all">
+              <div className="flex items-center gap-2">
+                <Scale className="w-4 h-4 text-primary" />
+                <span className="text-sm font-bold">
+                  {measurements?.some(m => m.date === today) ? '✏️ Editar medição de hoje' : '➕ Registrar medição'}
+                </span>
+              </div>
+              {showMeasureForm ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+            </button>
+
+            <AnimatePresence>
+              {showMeasureForm && (
+                <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+                  className="bg-card border border-border rounded-2xl p-4 space-y-4">
+                  <div>
+                    <label className="text-xs text-muted-foreground block mb-1">Data</label>
+                    <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)}
+                      className="w-full bg-secondary border border-border rounded-xl px-3 py-2 text-sm outline-none focus:border-primary/50" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    {BODY_FIELDS.map(f => (
+                      <div key={f.key}>
+                        <label className="text-xs text-muted-foreground block mb-1">{f.emoji} {f.label} ({f.unit})</label>
+                        <input type="number" step="0.1" placeholder="—"
+                          value={formData[f.key] || ''}
+                          onChange={e => setFormData(p => ({ ...p, [f.key]: e.target.value }))}
+                          className="w-full bg-secondary border border-border rounded-xl px-2 py-2 text-sm text-center outline-none focus:border-primary/50" />
+                      </div>
+                    ))}
+                  </div>
+                  <input placeholder="📝 Observações..."
+                    value={formData.notes || ''}
+                    onChange={e => setFormData(p => ({ ...p, notes: e.target.value }))}
+                    className="w-full bg-secondary border border-border rounded-xl px-3 py-2 text-sm outline-none focus:border-primary/50" />
+                  <button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}
+                    className="w-full bg-primary text-primary-foreground font-bold py-3 rounded-2xl hover:bg-primary/90 transition-all disabled:opacity-50">
+                    {saveMutation.isPending ? 'Salvando...' : 'Salvar medição'}
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Latest measures grid */}
+            {latestMeasure && (
+              <div className="grid grid-cols-3 gap-2">
+                {BODY_FIELDS.filter(f => latestMeasure[f.key]).map(f => {
+                  const diff = firstMeasure && firstMeasure.id !== latestMeasure.id && firstMeasure[f.key]
+                    ? (latestMeasure[f.key] - firstMeasure[f.key]).toFixed(1)
+                    : null;
+                  return (
+                    <div key={f.key} className="bg-card border border-border rounded-2xl p-3 text-center">
+                      <p className="text-lg">{f.emoji}</p>
+                      <p className="font-display font-black text-gold text-base">
+                        {latestMeasure[f.key]}<span className="text-xs font-normal text-muted-foreground ml-0.5">{f.unit}</span>
+                      </p>
+                      {diff !== null && (
+                        <p className={`text-[10px] font-bold ${parseFloat(diff) > 0 ? 'text-success' : 'text-destructive'}`}>
+                          {parseFloat(diff) > 0 ? '+' : ''}{diff}
+                        </p>
+                      )}
+                      <p className="text-[10px] text-muted-foreground">{f.label}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Weight chart */}
+            {weightData.length > 1 && (
+              <div className="bg-card border border-border rounded-2xl p-4">
+                <p className="text-sm font-bold mb-3 flex items-center gap-2">
+                  <Scale className="w-4 h-4 text-gold" /> Evolução de peso
+                </p>
+                <ResponsiveContainer width="100%" height={150}>
+                  <LineChart data={weightData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
+                    <CartesianGrid {...CHART_STYLE.grid} />
+                    <XAxis dataKey="label" {...CHART_STYLE.axis} />
+                    <YAxis {...CHART_STYLE.axis} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Line type="monotone" dataKey="peso" stroke="#D4A853" strokeWidth={2.5}
+                      dot={{ fill: '#D4A853', r: 4 }} unit="kg" name="Peso" />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+
+            {sortedMeasurements.length === 0 && (
+              <div className="text-center py-12">
+                <Scale className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-20" />
+                <p className="text-sm text-muted-foreground">Nenhuma medição ainda</p>
+                <p className="text-xs text-muted-foreground mt-1">Registre seu peso e medidas para acompanhar evolução</p>
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }

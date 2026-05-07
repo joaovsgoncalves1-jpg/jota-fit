@@ -1,0 +1,46 @@
+{
+  "name": "ExerciseSubstitution",
+  "type": "object",
+  "properties": {
+    "exercise_id": {
+      "type": "string",
+      "description": "ID do exerc\u00edcio original"
+    },
+    "substitute_exercise_id": {
+      "type": "string",
+      "description": "ID do exerc\u00edcio substituto"
+    },
+    "reason": {
+      "type": "string",
+      "description": "Motivo da substitui\u00e7\u00e3o (sem equipamento, les\u00e3o, etc.)"
+    },
+    "equipment_context": {
+      "type": "string",
+      "description": "Contexto de equipamento necess\u00e1rio para o substituto"
+    },
+    "difficulty_match": {
+      "type": "string",
+      "enum": [
+        "easier",
+        "same",
+        "harder"
+      ],
+      "description": "Compara\u00e7\u00e3o de dificuldade"
+    },
+    "same_primary_muscle": {
+      "type": "boolean",
+      "default": true
+    },
+    "same_movement_pattern": {
+      "type": "boolean",
+      "default": false
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "exercise_id",
+    "substitute_exercise_id"
+  ]
+}

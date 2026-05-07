@@ -1,0 +1,45 @@
+{
+  "name": "ExerciseProgression",
+  "type": "object",
+  "properties": {
+    "exercise_id": {
+      "type": "string",
+      "description": "ID do exerc\u00edcio atual"
+    },
+    "previous_exercise_id": {
+      "type": "string",
+      "description": "ID do exerc\u00edcio anterior (regress\u00e3o)"
+    },
+    "next_exercise_id": {
+      "type": "string",
+      "description": "ID do pr\u00f3ximo exerc\u00edcio (progress\u00e3o)"
+    },
+    "difficulty_order": {
+      "type": "number",
+      "description": "Posi\u00e7\u00e3o na cadeia de progress\u00e3o (1=mais f\u00e1cil)"
+    },
+    "requirement_to_unlock": {
+      "type": "string",
+      "description": "Ex: 3x8 reps, 30s hold"
+    },
+    "progression_type": {
+      "type": "string",
+      "enum": [
+        "linear",
+        "skill",
+        "band_reduction",
+        "load",
+        "volume",
+        "skill_unlock"
+      ],
+      "description": "Tipo de progress\u00e3o"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notas sobre a progress\u00e3o"
+    }
+  },
+  "required": [
+    "exercise_id"
+  ]
+}
