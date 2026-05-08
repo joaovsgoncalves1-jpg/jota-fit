@@ -154,18 +154,34 @@ export const toExercise = (r) => r && ({
 // Routine
 // ──────────────────────────────────────────────────────────────────────────────
 
-export const toRoutine = (r) => r && ({
-  id: r.id,
-  name: r.name,
-  studentEmail: r.student_email,
-  description: r.description,
-  daysOfWeek: r.days_of_week || [],
-  isActive: !!r.is_active,
-  createdByRole: r.created_by || 'student',
-  consultantNote: r.consultant_note,
-  createdAt: r.created_date,
-  updatedAt: r.updated_date,
-});
+export const toRoutine = (r) => {
+  if (!r) return r;
+  // created_by no schema deveria ser 'student'|'jota', mas registros legados
+  // podem ter email do criador. Normalizamos via getCreatorRole.
+  const raw = r.created_by;
+  let role = 'student';
+  if (raw === 'jota' || raw === 'student') {
+    role = raw;
+  } else if (typeof raw === 'string' && raw) {
+    const v = raw.toLowerCase();
+    if (v.includes('jota') || v.includes('admin') || v.includes('consult') || v.includes('coach')) {
+      role = 'jota';
+    }
+  }
+  return {
+    id: r.id,
+    name: r.name,
+    studentEmail: r.student_email,
+    description: r.description,
+    daysOfWeek: r.days_of_week || [],
+    isActive: !!r.is_active,
+    createdByRole: role,
+    createdByEmail: typeof raw === 'string' && raw.includes('@') ? raw : null,
+    consultantNote: r.consultant_note,
+    createdAt: r.created_date,
+    updatedAt: r.updated_date,
+  };
+};
 
 export const fromRoutine = (r) => pickDefined({
   name: r.name,
@@ -229,9 +245,10 @@ export const toWorkoutSession = (r) => r && ({
   status: r.status || 'in_progress',
   notes: r.notes,
   totalVolumeKg: r.total_volume_kg,
-  exercisesCompleted: r.exercises_completed,
-  setsCompleted: r.sets_completed,
-  xpEarned: r.xp_earned,
+  // Pode vir null em sessões antigas — quem consome resolve fallback via SetLogs
+  exercisesCompleted: r.exercises_completed ?? null,
+  setsCompleted: r.sets_completed ?? null,
+  xpEarned: r.xp_earned || 0,
   prsCount: r.prs_count || 0,
   prsDetail: r.prs_detail,
   createdAt: r.created_date,

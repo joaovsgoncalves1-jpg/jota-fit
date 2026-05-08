@@ -43,6 +43,18 @@ export async function getExercise(id) {
   return toExercise(list?.[0] || null);
 }
 
+/**
+ * Busca múltiplos exercícios por id de uma vez.
+ * Se algum id não existir, simplesmente não aparece no resultado.
+ * Usa a lista global em cache (mais barato que filter $in para listas pequenas).
+ */
+export async function getExercisesByIds(ids) {
+  if (!ids?.length) return [];
+  const all = await listAllExercises();
+  const wanted = new Set(ids);
+  return all.filter(e => wanted.has(e.id));
+}
+
 // ──────────────────────────────────────────────────────────────────────────────
 // Filtros no cliente — preserva o comportamento atual da Biblioteca.
 // ──────────────────────────────────────────────────────────────────────────────

@@ -52,6 +52,36 @@ export async function deleteRoutine(id) {
   return db.Routine.delete(id);
 }
 
+/**
+ * Carrega uma rotina + RoutineExercises + dados completos do Exercise.
+ * Se algum exercise_id não for encontrado, devolve o item com `exercise: null`
+ * e `missing: true` — a UI deve mostrar fallback "Exercício não encontrado"
+ * sem quebrar.
+ */
+export async function getRoutineWithExercises(routineId) {
+  if (!routineId) return null;
+  const routine = await getRoutine(routineId);
+  if (!routine) return null;
+
+  const items = await listRoutineExercises(routineId);
+  if (!items.length) return { routine, items: [] };
+
+  // Lazy import para evitar ciclo
+  const { getExercisesByIds } = await import('./exerciseService.js');
+  const ids = [...new Set(items.map(i => i.exerciseId).filter(Boolean))];
+  const exercises = await getExercisesByIds(ids);
+  const exerciseById = new Map(exercises.map(e => [e.id, e]));
+
+  return {
+    routine,
+    items: items.map(re => ({
+      ...re,
+      exercise: exerciseById.get(re.exerciseId) || null,
+      missing: !exerciseById.has(re.exerciseId),
+    })),
+  };
+}
+
 /** Marca uma rotina como ativa, desativando as outras do mesmo aluno. */
 export async function setActiveRoutine(routineId, studentEmail) {
   const all = await listRoutinesByStudent(studentEmail);

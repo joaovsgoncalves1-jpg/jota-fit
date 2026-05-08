@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import ExerciseDetailSheet from '@/components/biblioteca/ExerciseDetailSheet';
 import AddToRoutineModal from '@/components/biblioteca/AddToRoutineModal';
 import QuickFilterChips from '@/components/biblioteca/QuickFilterChips';
+import MediaPlaceholder from '@/components/common/MediaPlaceholder';
+import EmptyState from '@/components/common/EmptyState';
 
 const MOVEMENT_FILTERS = [
   { key: '', label: 'Todos' },
@@ -373,14 +375,17 @@ export default function BibliotecaPage() {
               <button className="w-full p-3.5 text-left" onClick={() => setSelectedExercise(ex)}>
                 <div className="flex items-center gap-3">
                   {/* Thumb / icon */}
-                  <div className="w-12 h-12 rounded-xl bg-muted/40 flex items-center justify-center shrink-0 overflow-hidden">
-                    {ex.gifUrl
-                      ? <img src={ex.gifUrl} alt={ex.name} className="w-full h-full object-cover" />
-                      : ex.imageUrl
-                      ? <img src={ex.imageUrl} alt={ex.name} className="w-full h-full object-cover" />
-                      : <span className="text-xl">{PATTERN_EMOJI[ex.movementPattern] || '💪'}</span>
-                    }
-                  </div>
+                  {ex.gifUrl || ex.imageUrl || ex.thumbnailUrl ? (
+                    <div className="w-12 h-12 rounded-xl bg-muted/40 flex items-center justify-center shrink-0 overflow-hidden">
+                      <img
+                        src={ex.gifUrl || ex.imageUrl || ex.thumbnailUrl}
+                        alt={ex.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <MediaPlaceholder exercise={ex} variant="thumb" className="shrink-0" />
+                  )}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 mb-0.5">
                       {ex.isJotaOriginal && (
@@ -432,14 +437,13 @@ export default function BibliotecaPage() {
           ))}
 
           {filtered.length === 0 && !isLoading && (
-            <div className="text-center py-16">
-              <Dumbbell className="w-12 h-12 mx-auto mb-3 text-muted-foreground opacity-30" />
-              <p className="text-sm font-bold text-muted-foreground">Nenhum exercício encontrado</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Tente outro músculo, equipamento ou{' '}
-                <button onClick={clearFilters} className="text-primary underline">limpe os filtros</button>
-              </p>
-            </div>
+            <EmptyState
+              icon={Dumbbell}
+              title="Nenhum exercício encontrado"
+              description="Tente outro músculo, equipamento ou limpe os filtros para ver tudo."
+              action={hasFilters ? { label: 'Limpar filtros', onClick: clearFilters } : null}
+              tone="subtle"
+            />
           )}
         </div>
       )}

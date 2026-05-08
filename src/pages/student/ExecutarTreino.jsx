@@ -10,6 +10,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import WorkoutHeader from '@/components/treino/WorkoutHeader';
 import ExerciseCard from '@/components/treino/ExerciseCard';
 import WorkoutSummaryModal from '@/components/treino/WorkoutSummaryModal';
+import EmptyState from '@/components/common/EmptyState';
+import { Dumbbell } from 'lucide-react';
 import {
   useCurrentUser,
   useRoutine, useRoutineExercises, useExercises,
@@ -169,13 +171,13 @@ export default function ExecutarTreino() {
         })}
 
         {sortedExercises.length === 0 && (
-          <div className="text-center py-16">
-            <p className="text-muted-foreground text-sm">Nenhum exercício nesta rotina.</p>
-            <button onClick={() => navigate('/biblioteca')}
-              className="mt-3 text-primary text-sm font-bold hover:underline">
-              Adicionar da Biblioteca →
-            </button>
-          </div>
+          <EmptyState
+            icon={Dumbbell}
+            title="Rotina vazia"
+            description="Adicione exercícios da biblioteca pra começar este treino."
+            action={{ label: 'Ir para a Biblioteca', onClick: () => navigate('/biblioteca') }}
+            className="mt-8"
+          />
         )}
       </div>
 

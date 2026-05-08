@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, Play, Edit2, Trash2, ChevronDown, ChevronUp, Star, Dumbbell } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import RoutineFormModal from '@/components/rotina/RoutineFormModal';
+import EmptyState from '@/components/common/EmptyState';
 import {
   useCurrentUser,
   useStudentRoutines, useAllRoutineExercises,
@@ -59,18 +60,16 @@ export default function MinhaRotina() {
           <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
         </div>
       ) : sorted.length === 0 ? (
-        <div className="text-center py-16 px-8">
-          <Dumbbell className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-20" />
-          <p className="font-bold text-base mb-1">Nenhuma rotina criada</p>
-          <p className="text-sm text-muted-foreground mb-6">
-            Crie sua primeira rotina e adicione exercícios da biblioteca. Você está no caminho certo!
-          </p>
-          <button
-            onClick={() => { setEditingRoutine(null); setShowForm(true); }}
-            className="bg-primary text-primary-foreground font-bold px-6 py-3 rounded-2xl hover:bg-primary/90 transition-all"
-          >
-            Criar Primeira Rotina
-          </button>
+        <div className="px-4">
+          <EmptyState
+            icon={Dumbbell}
+            title="Nenhuma rotina criada"
+            description="Crie sua primeira rotina e adicione exercícios da biblioteca. Você está no caminho certo!"
+            action={{
+              label: 'Criar Primeira Rotina',
+              onClick: () => { setEditingRoutine(null); setShowForm(true); },
+            }}
+          />
         </div>
       ) : (
         <div className="px-4 space-y-3">
@@ -195,11 +194,14 @@ export default function MinhaRotina() {
                         ) : routineExercises.map((re, idx) => {
                           const ex = exercises?.find(e => e.id === re.exerciseId);
                           const trackingType = ex?.trackingType || 'weight_reps';
+                          const missing = !ex;
                           return (
-                            <div key={re.id} className="flex items-center gap-3 bg-muted/20 rounded-xl px-3 py-2.5">
-                              <span className="font-display font-black text-xs text-primary w-5 shrink-0">{idx + 1}</span>
+                            <div key={re.id} className={`flex items-center gap-3 rounded-xl px-3 py-2.5 ${missing ? 'bg-destructive/5 border border-destructive/20' : 'bg-muted/20'}`}>
+                              <span className={`font-display font-black text-xs w-5 shrink-0 ${missing ? 'text-destructive/70' : 'text-primary'}`}>{idx + 1}</span>
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm font-bold truncate">{ex?.name || 'Exercício'}</p>
+                                <p className={`text-sm font-bold truncate ${missing ? 'text-destructive/80' : ''}`}>
+                                  {ex?.name || 'Exercício não encontrado'}
+                                </p>
                                 <div className="flex items-center gap-2 mt-0.5">
                                   <span className="text-[10px]">{TRACKING_ICON[trackingType] || '💪'}</span>
                                   <p className="text-[10px] text-muted-foreground">

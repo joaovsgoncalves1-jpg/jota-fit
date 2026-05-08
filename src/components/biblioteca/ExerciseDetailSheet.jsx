@@ -5,6 +5,7 @@ import { X, Heart, Plus, ChevronDown, ChevronUp, TrendingUp } from 'lucide-react
 import ExerciseStatsPanel from './ExerciseStatsPanel';
 import ProgressionPath from './ProgressionPath';
 import BandGuide from './BandGuide';
+import MediaPlaceholder from '@/components/common/MediaPlaceholder';
 
 const LEVEL_BADGE = {
   beginner: 'bg-success/20 text-success',
@@ -99,7 +100,7 @@ export default function ExerciseDetailSheet({ exercise, open, onClose, onAddToRo
                 ))}
               </div>
 
-              {/* Media */}
+              {/* Media — placeholder premium se não houver mídia */}
               {ytId ? (
                 <div className="rounded-2xl overflow-hidden mb-4 aspect-video bg-muted/20">
                   <iframe src={`https://www.youtube.com/embed/${ytId}`} className="w-full h-full"
@@ -109,15 +110,12 @@ export default function ExerciseDetailSheet({ exercise, open, onClose, onAddToRo
                 <div className="rounded-2xl overflow-hidden mb-4 aspect-video bg-muted/20">
                   <img src={exercise.gifUrl} alt={exercise.name} className="w-full h-full object-contain" />
                 </div>
-              ) : exercise.imageUrl ? (
+              ) : exercise.imageUrl || exercise.thumbnailUrl ? (
                 <div className="rounded-2xl overflow-hidden mb-4 aspect-video bg-muted/20">
-                  <img src={exercise.imageUrl} alt={exercise.name} className="w-full h-full object-cover" />
+                  <img src={exercise.imageUrl || exercise.thumbnailUrl} alt={exercise.name} className="w-full h-full object-cover" />
                 </div>
               ) : (
-                <div className="rounded-2xl mb-4 aspect-video bg-muted/10 border border-border flex flex-col items-center justify-center gap-2">
-                  <p className="text-4xl">💪</p>
-                  <p className="text-xs text-muted-foreground">Tutorial em breve</p>
-                </div>
+                <MediaPlaceholder exercise={exercise} variant="wide" className="mb-4" />
               )}
 
               {/* Stats grid */}

@@ -361,7 +361,9 @@ export default function ExerciseCard({ routineExercise, exercise, sessionId, stu
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
-            <h3 className="font-bold text-base leading-tight truncate">{exercise?.name || 'Exercício'}</h3>
+            <h3 className={`font-bold text-base leading-tight truncate ${!exercise ? 'text-destructive/80' : ''}`}>
+              {exercise?.name || 'Exercício não encontrado'}
+            </h3>
             <button
               onClick={() => setShowInfo(s => !s)}
               className="shrink-0 w-5 h-5 rounded-full bg-muted/40 flex items-center justify-center hover:bg-muted/60"
