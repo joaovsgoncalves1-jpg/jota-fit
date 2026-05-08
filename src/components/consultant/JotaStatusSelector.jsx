@@ -2,9 +2,8 @@
  * JotaStatusSelector — botão + dropdown para alterar consultant_status do aluno.
  */
 import React, { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
 import { ChevronDown, Check } from 'lucide-react';
+import { useUpdateConsultantStatus } from '@/services';
 
 const OPTIONS = [
   { value: 'ativo',     label: 'Ativo',     dot: 'bg-success' },
@@ -15,17 +14,13 @@ const OPTIONS = [
 
 export default function JotaStatusSelector({ profile }) {
   const [open, setOpen] = useState(false);
-  const queryClient = useQueryClient();
-  const current = profile.consultant_status || 'ativo';
+  const current = profile.consultantStatus || 'ativo';
 
-  const mutation = useMutation({
-    mutationFn: (status) => base44.entities.StudentProfile.update(profile.id, { consultant_status: status }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['all-profiles'] });
-      queryClient.invalidateQueries({ queryKey: ['all-profiles-admin'] });
-      setOpen(false);
-    },
-  });
+  const mutation = useUpdateConsultantStatus();
+
+  const handleChange = (status) => {
+    mutation.mutate({ profileId: profile.id, status }, { onSuccess: () => setOpen(false) });
+  };
 
   const currentOpt = OPTIONS.find(o => o.value === current) || OPTIONS[0];
 
@@ -47,7 +42,7 @@ export default function JotaStatusSelector({ profile }) {
             {OPTIONS.map(opt => (
               <button
                 key={opt.value}
-                onClick={() => mutation.mutate(opt.value)}
+                onClick={() => handleChange(opt.value)}
                 disabled={mutation.isPending}
                 className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-muted/40 transition-colors text-left"
               >

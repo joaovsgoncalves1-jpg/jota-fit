@@ -4,9 +4,9 @@
  */
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Check } from 'lucide-react';
+import { routineService } from '@/services';
 
 const DAYS = [
   { key: 'seg', label: 'Seg' }, { key: 'ter', label: 'Ter' }, { key: 'qua', label: 'Qua' },
@@ -22,8 +22,8 @@ export default function JotaRoutineForm({ studentEmail, routine, mode = 'create'
     isDuplicate ? `${routine?.name || ''} (cópia)` : routine?.name || ''
   );
   const [description, setDescription] = useState(routine?.description || '');
-  const [consultantNote, setConsultantNote] = useState(routine?.consultant_note || '');
-  const [days, setDays] = useState(routine?.days_of_week || []);
+  const [consultantNote, setConsultantNote] = useState(routine?.consultantNote || '');
+  const [days, setDays] = useState(routine?.daysOfWeek || []);
 
   const toggleDay = (d) => setDays(prev => prev.includes(d) ? prev.filter(x => x !== d) : [...prev, d]);
 
@@ -32,33 +32,21 @@ export default function JotaRoutineForm({ studentEmail, routine, mode = 'create'
       const payload = {
         name,
         description,
-        days_of_week: days,
-        consultant_note: consultantNote,
-        student_email: studentEmail,
-        created_by: 'jota',
+        daysOfWeek: days,
+        consultantNote,
+        studentEmail,
+        createdByRole: 'jota',
       };
-      if (isEdit && routine) return base44.entities.Routine.update(routine.id, payload);
+      if (isEdit && routine) return routineService.updateRoutine(routine.id, payload);
 
-      // Create OR duplicate
-      const newRoutine = await base44.entities.Routine.create({ ...payload, is_active: false });
-
-      // Duplicate: copy routine exercises too
+      const newRoutine = await routineService.createRoutine({ ...payload, isActive: false });
       if (isDuplicate && routine?.id) {
-        const items = await base44.entities.RoutineExercise.filter({ routine_id: routine.id });
-        if (items?.length) {
-          await base44.entities.RoutineExercise.bulkCreate(
-            items.map(({ id, created_date, updated_date, created_by, ...item }) => ({
-              ...item,
-              routine_id: newRoutine.id,
-            }))
-          );
-        }
+        await routineService.duplicateRoutineExercises(routine.id, newRoutine.id);
       }
       return newRoutine;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['student-routines'] });
-      queryClient.invalidateQueries({ queryKey: ['all-routines-admin'] });
+      queryClient.invalidateQueries({ queryKey: ['routines'] });
       onClose();
     },
   });

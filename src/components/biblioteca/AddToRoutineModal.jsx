@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
-import { useCurrentUser } from '@/lib/useCurrentUser';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Check, Plus, ChevronDown, ChevronUp } from 'lucide-react';
+import { X, Check, Plus } from 'lucide-react';
+import {
+  useCurrentUser, useStudentRoutines, useAllRoutineExercises,
+  routineService,
+} from '@/services';
 
 const BAND_OPTIONS = [
   { key: 'muito_forte', label: 'Muito forte' },
@@ -23,45 +25,33 @@ export default function AddToRoutineModal({ exercise, open, onClose }) {
   const [band, setBand] = useState('');
   const [notes, setNotes] = useState('');
   const [selectedRoutine, setSelectedRoutine] = useState(null);
-  const [showAdvanced, setShowAdvanced] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  const { data: routines } = useQuery({
-    queryKey: ['my-routines', user?.email],
-    queryFn: () => base44.entities.Routine.filter({ student_email: user?.email }),
-    enabled: !!user?.email && open,
-  });
+  const { data: routines } = useStudentRoutines(open ? user?.email : null);
+  const { data: routineExercises } = useAllRoutineExercises();
 
-  const { data: routineExercises } = useQuery({
-    queryKey: ['all-routine-exercises'],
-    queryFn: () => base44.entities.RoutineExercise.list(),
-    enabled: open,
-  });
-
-  const trackingType = exercise?.tracking_type || 'weight_reps';
-  const isBand = exercise?.uses_band || trackingType === 'assisted_bodyweight';
+  const trackingType = exercise?.trackingType || 'weight_reps';
+  const isBand = exercise?.usesBand || trackingType === 'assisted_bodyweight';
   const isTime = trackingType === 'hold_time';
 
   const addMutation = useMutation({
     mutationFn: () => {
-      const routineREs = (routineExercises || []).filter(re => re.routine_id === selectedRoutine);
+      const routineREs = (routineExercises || []).filter(re => re.routineId === selectedRoutine);
       const maxOrder = routineREs.reduce((max, re) => Math.max(max, re.order || 0), 0);
-      return base44.entities.RoutineExercise.create({
-        routine_id: selectedRoutine,
-        exercise_id: exercise.id,
+      return routineService.addExerciseToRoutine(selectedRoutine, {
+        exerciseId: exercise.id,
         order: maxOrder + 1,
         sets: parseInt(sets) || 3,
-        target_reps: reps || undefined,
-        reps: reps || undefined,
-        target_weight_kg: parseFloat(weight) || undefined,
-        target_duration_seconds: parseInt(duration) || undefined,
-        rest_seconds: parseInt(rest) || 90,
-        band_assistance_level: band || undefined,
+        targetReps: reps || undefined,
+        targetWeightKg: parseFloat(weight) || undefined,
+        targetDurationSeconds: parseInt(duration) || undefined,
+        restSeconds: parseInt(rest) || 90,
+        bandAssistanceLevel: band || undefined,
         notes: notes || undefined,
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['all-routine-exercises'] });
+      queryClient.invalidateQueries({ queryKey: ['routines'] });
       setSuccess(true);
       setTimeout(() => { setSuccess(false); onClose(); }, 1200);
     },
@@ -69,7 +59,6 @@ export default function AddToRoutineModal({ exercise, open, onClose }) {
 
   const handleClose = () => { setSuccess(false); setSelectedRoutine(null); onClose(); };
 
-  // Auto-fill defaults based on exercise
   const repsPlaceholder = isTime ? '—' : isBand ? '6-8' : trackingType === 'bodyweight_reps' ? '8-12' : '8-12';
   const repsLabel = isTime ? 'Duração alvo (s)' : 'Reps alvo';
 
@@ -105,7 +94,6 @@ export default function AddToRoutineModal({ exercise, open, onClose }) {
                 </motion.div>
               ) : (
                 <>
-                  {/* Routine picker */}
                   <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">Escolha a rotina</p>
                   {(routines || []).length === 0 ? (
                     <p className="text-sm text-muted-foreground py-4 text-center bg-muted/20 rounded-xl">
@@ -124,8 +112,8 @@ export default function AddToRoutineModal({ exercise, open, onClose }) {
                           <div>
                             <p className="font-bold text-sm">{r.name}</p>
                             <div className="flex items-center gap-2">
-                              {r.is_active && <span className="text-[10px] text-primary font-bold">Ativa</span>}
-                              {r.created_by === 'jota' && <span className="text-[10px] text-gold font-bold">⭐ Jota</span>}
+                              {r.isActive && <span className="text-[10px] text-primary font-bold">Ativa</span>}
+                              {r.createdByRole === 'jota' && <span className="text-[10px] text-gold font-bold">⭐ Jota</span>}
                             </div>
                           </div>
                         </button>
@@ -133,7 +121,6 @@ export default function AddToRoutineModal({ exercise, open, onClose }) {
                     </div>
                   )}
 
-                  {/* Basic config */}
                   <div className="grid grid-cols-3 gap-2 mb-3">
                     <div>
                       <label className="text-[10px] text-muted-foreground block mb-1">Séries</label>
@@ -154,7 +141,6 @@ export default function AddToRoutineModal({ exercise, open, onClose }) {
                     </div>
                   </div>
 
-                  {/* Band selector */}
                   {isBand && (
                     <div className="mb-3">
                       <label className="text-[10px] text-muted-foreground block mb-1.5">Elástico planejado</label>
@@ -170,7 +156,6 @@ export default function AddToRoutineModal({ exercise, open, onClose }) {
                     </div>
                   )}
 
-                  {/* Weight (for weighted) */}
                   {trackingType === 'weight_reps' && (
                     <div className="mb-3">
                       <label className="text-[10px] text-muted-foreground block mb-1">Carga alvo (kg) — opcional</label>
@@ -180,7 +165,6 @@ export default function AddToRoutineModal({ exercise, open, onClose }) {
                     </div>
                   )}
 
-                  {/* Notes */}
                   <div className="mb-4">
                     <label className="text-[10px] text-muted-foreground block mb-1">Observações (opcional)</label>
                     <input value={notes} onChange={e => setNotes(e.target.value)}

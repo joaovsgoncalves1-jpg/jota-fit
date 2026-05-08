@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
+import { useCreateNote } from '@/services';
 
 const NOTE_TYPES = [
   { value: 'geral', label: 'Geral' },
@@ -17,25 +16,21 @@ const NOTE_TYPES = [
 ];
 
 export default function AddConsultantNoteModal({ studentEmail, onClose }) {
-  const queryClient = useQueryClient();
   const [form, setForm] = useState({
     note: '',
-    note_type: 'geral',
+    noteType: 'geral',
     priority: 'media',
-    visible_to_student: true,
+    visibleToStudent: true,
   });
 
-  const mutation = useMutation({
-    mutationFn: () => base44.entities.ConsultantNote.create({
-      student_email: studentEmail,
-      ...form,
-      created_at: new Date().toISOString(),
-    }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['consultant-notes', studentEmail] });
-      onClose();
-    },
-  });
+  const mutation = useCreateNote();
+
+  const handleSave = () => {
+    mutation.mutate(
+      { studentEmail, ...form },
+      { onSuccess: onClose }
+    );
+  };
 
   return (
     <AnimatePresence>
@@ -53,7 +48,7 @@ export default function AddConsultantNoteModal({ studentEmail, onClose }) {
 
           <div>
             <label className="text-xs text-muted-foreground block mb-1.5">Tipo</label>
-            <select value={form.note_type} onChange={e => setForm(p => ({ ...p, note_type: e.target.value }))}
+            <select value={form.noteType} onChange={e => setForm(p => ({ ...p, noteType: e.target.value }))}
               className="w-full bg-secondary border border-border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-primary/50">
               {NOTE_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
             </select>
@@ -81,13 +76,13 @@ export default function AddConsultantNoteModal({ studentEmail, onClose }) {
           </div>
 
           <div className="flex items-center gap-2">
-            <input type="checkbox" id="visible" checked={form.visible_to_student}
-              onChange={e => setForm(p => ({ ...p, visible_to_student: e.target.checked }))}
+            <input type="checkbox" id="visible" checked={form.visibleToStudent}
+              onChange={e => setForm(p => ({ ...p, visibleToStudent: e.target.checked }))}
               className="w-4 h-4 accent-primary" />
             <label htmlFor="visible" className="text-xs text-muted-foreground">Visível para o aluno</label>
           </div>
 
-          <button onClick={() => mutation.mutate()} disabled={!form.note || mutation.isPending}
+          <button onClick={handleSave} disabled={!form.note || mutation.isPending}
             className="w-full bg-primary text-primary-foreground font-bold py-3 rounded-2xl disabled:opacity-50 transition-all">
             {mutation.isPending ? 'Salvando...' : 'Salvar Nota'}
           </button>

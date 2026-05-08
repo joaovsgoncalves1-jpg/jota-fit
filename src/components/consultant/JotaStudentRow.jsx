@@ -32,20 +32,20 @@ export default function JotaStudentRow({ profile, sessions, prs, activeRoutine }
   // Frequência últimos 7 dias
   const weekAgo = format(subDays(today, 7), 'yyyy-MM-dd');
   const weekFreq = (sessions || []).filter(s => {
-    const d = s.finished_at?.slice(0, 10) || s.started_at?.slice(0, 10) || '';
+    const d = s.finishedAt?.slice(0, 10) || s.startedAt?.slice(0, 10) || '';
     return d >= weekAgo && (s.status === 'completed' || !s.status);
   }).length;
 
   // Último treino
   const lastSession = [...(sessions || [])]
     .filter(s => s.status === 'completed' || !s.status)
-    .sort((a, b) => (b.finished_at || b.started_at || '').localeCompare(a.finished_at || a.started_at || ''))[0];
-  const lastDate = lastSession?.finished_at?.slice(0, 10) || lastSession?.started_at?.slice(0, 10);
+    .sort((a, b) => (b.finishedAt || b.startedAt || '').localeCompare(a.finishedAt || a.startedAt || ''))[0];
+  const lastDate = lastSession?.finishedAt?.slice(0, 10) || lastSession?.startedAt?.slice(0, 10);
   const daysSince = lastDate ? differenceInDays(today, parseISO(lastDate)) : null;
 
   // PR mais recente
   const recentPR = [...(prs || [])].sort(
-    (a, b) => (b.achieved_at || '').localeCompare(a.achieved_at || '')
+    (a, b) => (b.achievedAt || '').localeCompare(a.achievedAt || '')
   )[0];
 
   // Alerta principal
@@ -58,12 +58,12 @@ export default function JotaStudentRow({ profile, sessions, prs, activeRoutine }
     alert = { text: `${daysSince}d sem treino`, tone: 'destructive' };
   } else if (daysSince >= 7) {
     alert = { text: `${daysSince}d sem treino`, tone: 'gold' };
-  } else if (weekFreq < 2 && (profile.weekly_training_frequency_goal || 3) >= 3) {
+  } else if (weekFreq < 2 && (profile.weeklyTrainingFrequencyGoal || 3) >= 3) {
     alert = { text: 'Freq. baixa', tone: 'gold' };
   }
 
-  const status = profile.consultant_status || 'ativo';
-  const goalLabel = GOAL_LABEL[profile.main_goal] || profile.main_goal || '—';
+  const status = profile.consultantStatus || 'ativo';
+  const goalLabel = GOAL_LABEL[profile.mainGoal] || profile.mainGoal || '—';
 
   return (
     <Link
@@ -84,9 +84,9 @@ export default function JotaStudentRow({ profile, sessions, prs, activeRoutine }
             <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border capitalize ${STATUS_STYLE[status]}`}>
               {status}
             </span>
-            {profile.current_streak > 0 && (
+            {profile.currentStreak > 0 && (
               <span className="text-[10px] font-bold text-primary flex items-center gap-0.5">
-                <Flame className="w-3 h-3" /> {profile.current_streak}
+                <Flame className="w-3 h-3" /> {profile.currentStreak}
               </span>
             )}
           </div>
@@ -113,7 +113,7 @@ export default function JotaStudentRow({ profile, sessions, prs, activeRoutine }
             {recentPR && (
               <span className="flex items-center gap-0.5 text-gold">
                 <Trophy className="w-2.5 h-2.5" />
-                <span className="truncate max-w-[110px]">{recentPR.exercise_name}</span>
+                <span className="truncate max-w-[110px]">{recentPR.exerciseName}</span>
               </span>
             )}
           </div>
