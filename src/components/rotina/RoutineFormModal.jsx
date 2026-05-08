@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Check } from 'lucide-react';
+import { routineService } from '@/services';
 
 const DAYS = [
   { key: 'seg', label: 'Seg' }, { key: 'ter', label: 'Ter' }, { key: 'qua', label: 'Qua' },
@@ -13,24 +13,24 @@ export default function RoutineFormModal({ routine, onClose, studentEmail }) {
   const queryClient = useQueryClient();
   const [name, setName] = useState(routine?.name || '');
   const [description, setDescription] = useState(routine?.description || '');
-  const [days, setDays] = useState(routine?.days_of_week || []);
+  const [days, setDays] = useState(routine?.daysOfWeek || []);
 
   useEffect(() => {
     setName(routine?.name || '');
     setDescription(routine?.description || '');
-    setDays(routine?.days_of_week || []);
+    setDays(routine?.daysOfWeek || []);
   }, [routine]);
 
   const toggleDay = (d) => setDays(prev => prev.includes(d) ? prev.filter(x => x !== d) : [...prev, d]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const payload = { name, description, days_of_week: days, student_email: studentEmail, created_by: 'student' };
-      if (routine) return base44.entities.Routine.update(routine.id, payload);
-      return base44.entities.Routine.create(payload);
+      const payload = { name, description, daysOfWeek: days, studentEmail, createdByRole: 'student' };
+      if (routine) return routineService.updateRoutine(routine.id, payload);
+      return routineService.createRoutine(payload);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['my-routines'] });
+      queryClient.invalidateQueries({ queryKey: ['routines'] });
       onClose();
     },
   });

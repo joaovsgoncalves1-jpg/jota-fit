@@ -4,14 +4,19 @@
  */
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
-import { useCurrentUser } from '@/lib/useCurrentUser';
+import { useQueryClient } from '@tanstack/react-query';
 import { Trophy } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import WorkoutHeader from '@/components/treino/WorkoutHeader';
 import ExerciseCard from '@/components/treino/ExerciseCard';
 import WorkoutSummaryModal from '@/components/treino/WorkoutSummaryModal';
+import {
+  useCurrentUser,
+  useRoutine, useRoutineExercises, useExercises,
+  useMyProfile,
+  useStudentSets, useStudentPRs,
+  workoutService, studentService,
+} from '@/services';
 
 // XP formula
 function calcXP(setCount, volumeKg) {
@@ -44,108 +49,69 @@ export default function ExecutarTreino() {
   const [prQueue, setPrQueue] = useState([]);
   const [summary, setSummary] = useState(null);
 
-  // ── Queries ──
-  const { data: routine } = useQuery({
-    queryKey: ['routine', routineId],
-    queryFn: () => base44.entities.Routine.filter({ id: routineId }),
-    enabled: !!routineId,
-    select: d => d?.[0],
-  });
+  const { data: routine } = useRoutine(routineId);
+  const { data: routineExercises } = useRoutineExercises(routineId);
+  const { data: exercises } = useExercises();
+  const { data: profile } = useMyProfile(user?.email);
+  const { data: allHistoricalSets } = useStudentSets(user?.email);
+  const { data: allPRs } = useStudentPRs(user?.email);
 
-  const { data: routineExercises } = useQuery({
-    queryKey: ['routine-exercises', routineId],
-    queryFn: () => base44.entities.RoutineExercise.filter({ routine_id: routineId }),
-    enabled: !!routineId,
-  });
-
-  const { data: exercises } = useQuery({
-    queryKey: ['all-exercises'],
-    queryFn: () => base44.entities.Exercise.list(),
-  });
-
-  const { data: profile } = useQuery({
-    queryKey: ['my-profile', user?.email],
-    queryFn: () => base44.entities.StudentProfile.filter({ email: user?.email }),
-    enabled: !!user?.email,
-    select: d => d?.[0],
-  });
-
-  const { data: allHistoricalSets } = useQuery({
-    queryKey: ['historical-sets', user?.email],
-    queryFn: () => base44.entities.SetLog.filter({ student_email: user?.email }),
-    enabled: !!user?.email,
-  });
-
-  const { data: allPRs } = useQuery({
-    queryKey: ['my-prs', user?.email],
-    queryFn: () => base44.entities.ExercisePersonalRecord.filter({ student_email: user?.email }),
-    enabled: !!user?.email,
-  });
-
-  // ── Create session ──
+  // Cria sessão ao montar
   useEffect(() => {
     if (!user?.email || !routineId || !routine || sessionCreated.current) return;
     sessionCreated.current = true;
-    base44.entities.WorkoutSession.create({
-      student_email: user.email,
-      routine_id: routineId,
-      routine_name: routine.name,
-      started_at: new Date().toISOString(),
-      status: 'in_progress',
+    workoutService.startSession({
+      studentEmail: user.email,
+      routineId,
+      routineName: routine.name,
     }).then(s => setSessionId(s.id));
   }, [user?.email, routineId, routine]);
 
-  // ── Finish workout ──
-  const finishMutation = useMutation({
-    mutationFn: async () => {
+  const handleFinish = async () => {
+    setFinishing(true);
+    try {
       const durationMinutes = Math.max(1, Math.round((new Date() - startTime.current) / 60000));
-      const setLogs = await base44.entities.SetLog.filter({ session_id: sessionId });
-      const totalVolume = setLogs.reduce((acc, s) => acc + ((s.weight_kg || 0) * (s.reps || 1)), 0);
-      const prSets = setLogs.filter(s => s.is_pr);
+      const setLogs = await workoutService.listSetsBySession(sessionId);
+      const totalVolume = setLogs.reduce((acc, s) => acc + ((s.weightKg || 0) * (s.reps || 1)), 0);
+      const prSets = setLogs.filter(s => s.isPr);
       const prsCount = prSets.length;
       const xpEarned = calcXP(setLogs.length, totalVolume) + prsCount * 25;
 
-      await base44.entities.WorkoutSession.update(sessionId, {
-        finished_at: new Date().toISOString(),
-        status: 'completed',
-        duration_minutes: durationMinutes,
-        total_volume_kg: Math.round(totalVolume),
-        sets_completed: setLogs.length,
-        exercises_completed: (routineExercises || []).length,
-        xp_earned: xpEarned,
-        prs_count: prsCount,
+      await workoutService.finishSession(sessionId, {
+        durationMinutes,
+        totalVolumeKg: Math.round(totalVolume),
+        setsCompleted: setLogs.length,
+        exercisesCompleted: (routineExercises || []).length,
+        xpEarned,
+        prsCount,
       });
 
       if (profile?.id) {
-        await base44.entities.StudentProfile.update(profile.id, {
-          xp_total: (profile.xp_total || 0) + xpEarned,
+        await studentService.updateProfile(profile.id, {
+          xpTotal: (profile.xpTotal || 0) + xpEarned,
         });
       }
 
-      // Fetch the actual PR records created in this session for richer cards
+      // Busca os PR records criados nesta sessão
       let prRecords = [];
       if (prsCount > 0) {
-        const allMyPRs = await base44.entities.ExercisePersonalRecord.filter({ student_email: user?.email });
-        prRecords = (allMyPRs || []).filter(p => p.session_id === sessionId);
+        prRecords = await workoutService.getPRsForSession(sessionId);
       }
 
-      return {
-        xpEarned,
-        prsCount,
-        prs: prRecords,
+      queryClient.invalidateQueries();
+      setSummary({
+        xpEarned, prsCount, prs: prRecords,
         durationMinutes,
         totalVolume: Math.round(totalVolume),
         setsCompleted: setLogs.length,
         exercisesCompleted: (routineExercises || []).length,
         routineName: routine?.name,
-        streak: profile?.current_streak || 0,
-      };
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries();
-      setSummary(data);
-    },
-  });
+        streak: profile?.currentStreak || 0,
+      });
+    } finally {
+      setFinishing(false);
+    }
+  };
 
   const handleCloseSummary = () => {
     setSummary(null);
@@ -167,7 +133,6 @@ export default function ExecutarTreino() {
 
   return (
     <div className="min-h-screen bg-background max-w-lg mx-auto">
-      {/* PR Toast Queue */}
       <AnimatePresence>
         {prQueue[0] && (
           <PRToast
@@ -178,19 +143,17 @@ export default function ExecutarTreino() {
         )}
       </AnimatePresence>
 
-      {/* Header */}
       <WorkoutHeader
         routine={routine}
         sortedExercises={sortedExercises}
         sessionId={sessionId}
-        finishing={finishing || finishMutation.isPending}
-        onFinish={() => { setFinishing(true); finishMutation.mutate(); }}
+        finishing={finishing}
+        onFinish={handleFinish}
       />
 
-      {/* Exercise List */}
       <div className="p-3 space-y-3 pb-20">
-        {sortedExercises.map((re, idx) => {
-          const ex = exercises?.find(e => e.id === re.exercise_id);
+        {sortedExercises.map((re) => {
+          const ex = exercises?.find(e => e.id === re.exerciseId);
           return (
             <ExerciseCard
               key={re.id}
@@ -216,7 +179,6 @@ export default function ExecutarTreino() {
         )}
       </div>
 
-      {/* Summary modal on finish */}
       <WorkoutSummaryModal
         open={!!summary}
         summary={summary}

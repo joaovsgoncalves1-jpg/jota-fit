@@ -20,7 +20,7 @@ const PRIORITY_DOT = {
 };
 
 export default function ConsultantNoteCard({ note }) {
-  const typeInfo = TYPE_LABELS[note.note_type] || TYPE_LABELS.geral;
+  const typeInfo = TYPE_LABELS[note.noteType] || TYPE_LABELS.geral;
 
   return (
     <div className="bg-card border border-border rounded-2xl p-4">
@@ -32,7 +32,7 @@ export default function ConsultantNoteCard({ note }) {
               {typeInfo.label}
             </span>
             <span className="text-[10px] text-muted-foreground ml-auto">
-              {note.created_at ? format(new Date(note.created_at), 'dd/MM/yyyy') : ''}
+              {note.createdAt ? format(new Date(note.createdAt), 'dd/MM/yyyy') : ''}
             </span>
           </div>
           <p className="text-sm text-foreground leading-relaxed">{note.note}</p>

@@ -4,8 +4,7 @@
  */
 import React, { useState, useMemo } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
-import { detectPR, buildPRRecord } from '@/lib/prDetection';
+import { workoutService } from '@/services';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   CheckCircle, Plus, Minus, Copy, Trophy, ChevronDown, ChevronUp,
@@ -181,16 +180,16 @@ function SetRow({ set, index, trackingType, usesBand, onUpdate, onComplete, onCo
 // ─── ExerciseCard (main) ──────────────────────────────────────────────────────
 export default function ExerciseCard({ routineExercise, exercise, sessionId, studentEmail, allHistoricalSets, allPRs, onPR }) {
   const queryClient = useQueryClient();
-  const trackingType = exercise?.tracking_type || 'weight_reps';
+  const trackingType = exercise?.trackingType || 'weight_reps';
   const targetSets = routineExercise.sets || 3;
-  const restSec = routineExercise.rest_seconds || exercise?.rest_seconds || 90;
+  const restSec = routineExercise.restSeconds || exercise?.restSeconds || 90;
 
   const [sets, setSets] = useState(() =>
     Array.from({ length: targetSets }, (_, i) => ({
       id: i,
-      valueA: routineExercise.target_weight_kg || null,
+      valueA: routineExercise.targetWeightKg || null,
       valueB: null,
-      band: routineExercise.band_assistance_level || '',
+      band: routineExercise.bandAssistanceLevel || '',
       bandColor: '',
       rir: null,
       rpe: null,
@@ -201,47 +200,47 @@ export default function ExerciseCard({ routineExercise, exercise, sessionId, stu
   const [expanded, setExpanded] = useState(true);
   const [showInfo, setShowInfo] = useState(false);
 
-  // Historical sets for this exercise
+  // Historical sets for this exercise (formato neutro)
   const historicalSets = useMemo(
-    () => (allHistoricalSets || []).filter(s => s.exercise_id === exercise?.id),
+    () => (allHistoricalSets || []).filter(s => s.exerciseId === exercise?.id),
     [allHistoricalSets, exercise?.id]
   );
 
   // Last session sets
   const lastSessionSets = useMemo(() => {
     if (!historicalSets.length) return null;
-    const sorted = [...historicalSets].sort((a, b) => (b.created_date || '').localeCompare(a.created_date || ''));
-    const lastSid = sorted[0]?.session_id;
+    const sorted = [...historicalSets].sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+    const lastSid = sorted[0]?.sessionId;
     return historicalSets
-      .filter(s => s.session_id === lastSid)
-      .sort((a, b) => a.set_number - b.set_number);
+      .filter(s => s.sessionId === lastSid)
+      .sort((a, b) => a.setNumber - b.setNumber);
   }, [historicalSets]);
 
   // Best PR for this exercise
   const bestPR = useMemo(() => {
-    const prs = (allPRs || []).filter(p => p.exercise_id === exercise?.id);
+    const prs = (allPRs || []).filter(p => p.exerciseId === exercise?.id);
     if (!prs.length) return null;
-    return prs.sort((a, b) => (b.achieved_at || '').localeCompare(a.achieved_at || ''))[0];
+    return prs.sort((a, b) => (b.achievedAt || '').localeCompare(a.achievedAt || ''))[0];
   }, [allPRs, exercise?.id]);
 
   // Suggestion for today
   const suggestion = useMemo(() => {
     if (!lastSessionSets?.length) return null;
     const last = lastSessionSets[0];
-    if (trackingType === 'weight_reps' && last.weight_kg && last.reps) {
-      const targetRep = routineExercise.target_reps ? parseInt(routineExercise.target_reps) : null;
+    if (trackingType === 'weight_reps' && last.weightKg && last.reps) {
+      const targetRep = routineExercise.targetReps ? parseInt(routineExercise.targetReps) : null;
       const metTarget = targetRep && last.reps >= targetRep;
-      if (metTarget) return `Aumentar carga: tente ${last.weight_kg + 2.5}kg`;
-      return `Manter ${last.weight_kg}kg, foco em técnica`;
+      if (metTarget) return `Aumentar carga: tente ${last.weightKg + 2.5}kg`;
+      return `Manter ${last.weightKg}kg, foco em técnica`;
     }
-    if (trackingType === 'assisted_bodyweight' && last.band_assistance_level) {
-      const sameBand = lastSessionSets.filter(s => s.band_assistance_level === last.band_assistance_level);
+    if (trackingType === 'assisted_bodyweight' && last.bandAssistanceLevel) {
+      const sameBand = lastSessionSets.filter(s => s.bandAssistanceLevel === last.bandAssistanceLevel);
       const maxReps = Math.max(...sameBand.map(s => s.reps || 0));
-      return `Bata ${maxReps + 1}+ reps com elástico ${BAND_LABEL[last.band_assistance_level]} ou tente mais leve`;
+      return `Bata ${maxReps + 1}+ reps com elástico ${BAND_LABEL[last.bandAssistanceLevel]} ou tente mais leve`;
     }
-    if (trackingType === 'hold_time' && last.duration_seconds) {
-      const bandTxt = last.band_assistance_level ? ` (${BAND_LABEL[last.band_assistance_level]})` : '';
-      return `Superar ${last.duration_seconds}s${bandTxt}`;
+    if (trackingType === 'hold_time' && last.durationSeconds) {
+      const bandTxt = last.bandAssistanceLevel ? ` (${BAND_LABEL[last.bandAssistanceLevel]})` : '';
+      return `Superar ${last.durationSeconds}s${bandTxt}`;
     }
     return null;
   }, [lastSessionSets, trackingType, routineExercise]);
@@ -250,10 +249,10 @@ export default function ExerciseCard({ routineExercise, exercise, sessionId, stu
   const lastSessionHint = useMemo(() => {
     if (!lastSessionSets?.length) return null;
     return lastSessionSets.map(s => {
-      const bandTxt = s.band_assistance_level ? `[${BAND_LABEL[s.band_assistance_level][0]}]` : '';
-      if (s.weight_kg && s.reps) return `${s.weight_kg}×${s.reps}`;
+      const bandTxt = s.bandAssistanceLevel ? `[${BAND_LABEL[s.bandAssistanceLevel][0]}]` : '';
+      if (s.weightKg && s.reps) return `${s.weightKg}×${s.reps}`;
       if (s.reps) return `${s.reps}r${bandTxt}`;
-      if (s.duration_seconds) return `${s.duration_seconds}s${bandTxt}`;
+      if (s.durationSeconds) return `${s.durationSeconds}s${bandTxt}`;
       return null;
     }).filter(Boolean).join(' | ');
   }, [lastSessionSets]);
@@ -261,63 +260,50 @@ export default function ExerciseCard({ routineExercise, exercise, sessionId, stu
   // PR label
   const prLabel = useMemo(() => {
     if (!bestPR) return null;
-    if (bestPR.record_type === 'max_weight') return `${bestPR.weight_kg}kg × ${bestPR.reps} reps`;
-    if (bestPR.record_type === 'max_reps') return `${bestPR.reps} reps`;
-    if (bestPR.record_type === 'max_duration') return `${bestPR.duration_seconds}s`;
-    if (bestPR.record_type === 'band_reduction') return `Elástico ${BAND_LABEL[bestPR.band_level] || bestPR.band_level}`;
+    if (bestPR.recordType === 'max_weight') return `${bestPR.weightKg}kg × ${bestPR.reps} reps`;
+    if (bestPR.recordType === 'max_reps') return `${bestPR.reps} reps`;
+    if (bestPR.recordType === 'max_duration') return `${bestPR.durationSeconds}s`;
+    if (bestPR.recordType === 'band_reduction') return `Elástico ${BAND_LABEL[bestPR.bandLevel] || bestPR.bandLevel}`;
     return null;
   }, [bestPR]);
 
   const logSetMutation = useMutation({
     mutationFn: async (setData) => {
-      const payload = {
-        session_id: sessionId,
-        student_email: studentEmail,
-        exercise_id: exercise?.id,
-        exercise_name: exercise?.name,
-        set_number: setData.setIndex + 1,
-        completed: true,
-        rir: setData.rir || undefined,
-        rpe: setData.rpe || undefined,
+      // Monta o `set` no formato neutro
+      const set = {
+        setNumber: setData.setIndex + 1,
+        rir: setData.rir,
+        rpe: setData.rpe,
       };
-
       if (['weight_reps', 'unilateral'].includes(trackingType)) {
-        payload.weight_kg = setData.valueA || 0;
-        payload.reps = setData.valueB || 0;
+        set.weightKg = setData.valueA || 0;
+        set.reps = setData.valueB || 0;
       } else if (['bodyweight_reps', 'assisted_bodyweight'].includes(trackingType)) {
-        payload.reps = setData.valueB || 0;
-        payload.band_assistance_level = setData.band || undefined;
-        payload.band_color = setData.bandColor || undefined;
+        set.reps = setData.valueB || 0;
+        set.bandAssistanceLevel = setData.band || undefined;
+        set.bandColor = setData.bandColor || undefined;
       } else if (trackingType === 'hold_time') {
-        payload.duration_seconds = setData.valueB || 0;
-        payload.band_assistance_level = setData.band || undefined;
-        payload.band_color = setData.bandColor || undefined;
+        set.durationSeconds = setData.valueB || 0;
+        set.bandAssistanceLevel = setData.band || undefined;
+        set.bandColor = setData.bandColor || undefined;
       } else if (trackingType === 'time_distance') {
-        payload.duration_seconds = (setData.valueB || 0) * 60;
-        payload.weight_kg = setData.valueA || 0;
+        set.durationSeconds = (setData.valueB || 0) * 60;
+        set.weightKg = setData.valueA || 0;
       }
 
-      const prResult = detectPR(payload, historicalSets, trackingType);
-      if (prResult?.isPR) {
-        payload.is_pr = true;
-        payload.pr_type = prResult.prType;
-      }
-
-      await base44.entities.SetLog.create(payload);
-
-      if (prResult?.isPR && sessionId) {
-        await base44.entities.ExercisePersonalRecord.create(
-          buildPRRecord({ studentEmail, exerciseId: exercise?.id, exerciseName: exercise?.name, set: payload, prResult, sessionId })
-        );
-      }
-
-      return { isPR: prResult?.isPR || false };
+      const result = await workoutService.logSet({
+        studentEmail,
+        sessionId,
+        exercise,
+        set,
+        historicalSets,
+      });
+      return { isPR: result.isPR };
     },
     onSuccess: ({ isPR }, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['historical-sets', studentEmail] });
+      queryClient.invalidateQueries({ queryKey: ['workouts', 'sets', studentEmail] });
       if (isPR) onPR(exercise?.name);
       setCompletedSets(prev => [...prev, { index: variables.setIndex, isPR }]);
-      // auto-start rest timer
       setShowRest(true);
     },
   });
@@ -341,10 +327,10 @@ export default function ExerciseCard({ routineExercise, exercise, sessionId, stu
       if (!last) return s;
       return {
         ...s,
-        valueA: last.weight_kg || s.valueA,
-        valueB: last.reps || last.duration_seconds || s.valueB,
-        band: last.band_assistance_level || s.band,
-        bandColor: last.band_color || s.bandColor,
+        valueA: last.weightKg || s.valueA,
+        valueB: last.reps || last.durationSeconds || s.valueB,
+        band: last.bandAssistanceLevel || s.band,
+        bandColor: last.bandColor || s.bandColor,
       };
     }));
   };
@@ -356,10 +342,10 @@ export default function ExerciseCard({ routineExercise, exercise, sessionId, stu
       {/* ── Header ── */}
       <div className="flex items-start gap-3 px-4 pt-4 pb-2">
         {/* Thumbnail */}
-        {exercise?.thumbnail_url || exercise?.gif_url ? (
+        {exercise?.thumbnailUrl || exercise?.gifUrl ? (
           <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 bg-muted/30">
             <img
-              src={exercise.thumbnail_url || exercise.gif_url}
+              src={exercise.thumbnailUrl || exercise.gifUrl}
               alt={exercise.name}
               className="w-full h-full object-cover"
             />
@@ -388,11 +374,11 @@ export default function ExerciseCard({ routineExercise, exercise, sessionId, stu
             <span className="text-[11px] text-muted-foreground">
               {completedIndexes.length}/{sets.length} séries
             </span>
-            {routineExercise.target_reps && (
-              <span className="text-[11px] text-muted-foreground">· {routineExercise.target_reps} reps</span>
+            {routineExercise.targetReps && (
+              <span className="text-[11px] text-muted-foreground">· {routineExercise.targetReps} reps</span>
             )}
-            {routineExercise.target_weight_kg && (
-              <span className="text-[11px] text-muted-foreground">· {routineExercise.target_weight_kg}kg</span>
+            {routineExercise.targetWeightKg && (
+              <span className="text-[11px] text-muted-foreground">· {routineExercise.targetWeightKg}kg</span>
             )}
             {restSec && (
               <span className="text-[11px] text-muted-foreground flex items-center gap-0.5">
@@ -443,8 +429,8 @@ export default function ExerciseCard({ routineExercise, exercise, sessionId, stu
                   <p className="text-xs text-foreground">{routineExercise.notes || exercise?.tips}</p>
                 </div>
               )}
-              {routineExercise.rir_target && (
-                <p className="text-xs text-muted-foreground px-1">RIR alvo: {routineExercise.rir_target}</p>
+              {routineExercise.rirTarget && (
+                <p className="text-xs text-muted-foreground px-1">RIR alvo: {routineExercise.rirTarget}</p>
               )}
             </div>
           </motion.div>
@@ -479,7 +465,7 @@ export default function ExerciseCard({ routineExercise, exercise, sessionId, stu
                     set={set}
                     index={i}
                     trackingType={trackingType}
-                    usesBand={!!exercise?.uses_band}
+                    usesBand={!!exercise?.usesBand}
                     isCompleted={isCompleted}
                     isPR={isPR}
                     isCurrent={isCurrent && !isCompleted}
@@ -489,10 +475,10 @@ export default function ExerciseCard({ routineExercise, exercise, sessionId, stu
                     onCopyLast={lastForThisSet && !isCompleted ? () => {
                       setSets(prev => prev.map((s, si) => si === i ? {
                         ...s,
-                        valueA: lastForThisSet.weight_kg || s.valueA,
-                        valueB: lastForThisSet.reps || lastForThisSet.duration_seconds || s.valueB,
-                        band: lastForThisSet.band_assistance_level || s.band,
-                        bandColor: lastForThisSet.band_color || s.bandColor,
+                        valueA: lastForThisSet.weightKg || s.valueA,
+                        valueB: lastForThisSet.reps || lastForThisSet.durationSeconds || s.valueB,
+                        band: lastForThisSet.bandAssistanceLevel || s.band,
+                        bandColor: lastForThisSet.bandColor || s.bandColor,
                       } : s));
                     } : null}
                   />

@@ -1,7 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
-import { useCurrentUser } from '@/lib/useCurrentUser';
+import { useCurrentUser, useExercises } from '@/services';
 import { Search, Filter, Heart, Plus, X, ChevronDown, ChevronUp, Dumbbell, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ExerciseDetailSheet from '@/components/biblioteca/ExerciseDetailSheet';
@@ -126,43 +124,37 @@ export default function BibliotecaPage() {
     try { return JSON.parse(localStorage.getItem('jotafit_favs') || '[]'); } catch { return []; }
   });
 
-  const { data: exercises, isLoading } = useQuery({
-    queryKey: ['all-exercises'],
-    queryFn: () => base44.entities.Exercise.list('-created_date', 500),
-  });
+  const { data: exercises, isLoading } = useExercises();
 
   const filtered = useMemo(() => {
     let list = exercises || [];
 
     // Quick filter (top chips)
-    if (quickFilter === 'calistenia') list = list.filter(e => e.exercise_type === 'calistenia');
-    else if (quickFilter === 'musculacao') list = list.filter(e => e.exercise_type === 'musculacao');
-    else if (quickFilter === 'band') list = list.filter(e => e.uses_band);
-    else if (quickFilter === 'jota') list = list.filter(e => e.verified_by_jota || e.is_jota_original);
+    if (quickFilter === 'calistenia') list = list.filter(e => e.exerciseType === 'calistenia');
+    else if (quickFilter === 'musculacao') list = list.filter(e => e.exerciseType === 'musculacao');
+    else if (quickFilter === 'band') list = list.filter(e => e.usesBand);
+    else if (quickFilter === 'jota') list = list.filter(e => e.verifiedByJota || e.isJotaOriginal);
 
     const q = search.toLowerCase();
     if (q) list = list.filter(e =>
       e.name?.toLowerCase().includes(q) ||
-      e.primary_muscle?.toLowerCase().includes(q) ||
-      (e.muscle_groups || []).some(m => m.toLowerCase().includes(q)) ||
-      (e.secondary_muscles || []).some(m => m.toLowerCase().includes(q))
+      e.primaryMuscle?.toLowerCase().includes(q) ||
+      (e.muscleGroups || []).some(m => m.toLowerCase().includes(q)) ||
+      (e.secondaryMuscles || []).some(m => m.toLowerCase().includes(q))
     );
-    if (movement) list = list.filter(e => e.movement_pattern === movement);
+    if (movement) list = list.filter(e => e.movementPattern === movement);
     if (muscle) list = list.filter(e =>
-      e.primary_muscle === muscle ||
-      (e.muscle_groups || []).includes(muscle) ||
-      (e.secondary_muscles || []).includes(muscle)
+      e.primaryMuscle === muscle ||
+      (e.muscleGroups || []).includes(muscle) ||
+      (e.secondaryMuscles || []).includes(muscle)
     );
-    if (equipment) list = list.filter(e =>
-      (e.equipment || []).includes(equipment) ||
-      (e.equipment_needed || []).includes(equipment)
-    );
-    if (exType) list = list.filter(e => e.exercise_type === exType);
+    if (equipment) list = list.filter(e => (e.equipment || []).includes(equipment));
+    if (exType) list = list.filter(e => e.exerciseType === exType);
     if (level) list = list.filter(e => e.difficulty === level);
     if (location) list = list.filter(e => (e.location || []).includes(location));
-    if (tracking) list = list.filter(e => e.tracking_type === tracking);
-    if (onlyBand) list = list.filter(e => e.uses_band);
-    if (onlyJota) list = list.filter(e => e.verified_by_jota || e.is_jota_original);
+    if (tracking) list = list.filter(e => e.trackingType === tracking);
+    if (onlyBand) list = list.filter(e => e.usesBand);
+    if (onlyJota) list = list.filter(e => e.verifiedByJota || e.isJotaOriginal);
     return list;
   }, [exercises, search, movement, muscle, equipment, exType, level, location, tracking, onlyBand, onlyJota, quickFilter]);
 
@@ -382,24 +374,24 @@ export default function BibliotecaPage() {
                 <div className="flex items-center gap-3">
                   {/* Thumb / icon */}
                   <div className="w-12 h-12 rounded-xl bg-muted/40 flex items-center justify-center shrink-0 overflow-hidden">
-                    {ex.gif_url
-                      ? <img src={ex.gif_url} alt={ex.name} className="w-full h-full object-cover" />
-                      : ex.image_url
-                      ? <img src={ex.image_url} alt={ex.name} className="w-full h-full object-cover" />
-                      : <span className="text-xl">{PATTERN_EMOJI[ex.movement_pattern] || '💪'}</span>
+                    {ex.gifUrl
+                      ? <img src={ex.gifUrl} alt={ex.name} className="w-full h-full object-cover" />
+                      : ex.imageUrl
+                      ? <img src={ex.imageUrl} alt={ex.name} className="w-full h-full object-cover" />
+                      : <span className="text-xl">{PATTERN_EMOJI[ex.movementPattern] || '💪'}</span>
                     }
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 mb-0.5">
-                      {ex.is_jota_original && (
+                      {ex.isJotaOriginal && (
                         <span className="text-[9px] font-black bg-gold/20 text-gold px-1.5 py-0.5 rounded-md">JOTA</span>
                       )}
-                      {ex.verified_by_jota && !ex.is_jota_original && (
+                      {ex.verifiedByJota && !ex.isJotaOriginal && (
                         <span className="text-[9px] font-black bg-gold/15 text-gold px-1.5 py-0.5 rounded-md flex items-center gap-0.5">
                           <CheckCircle2 className="w-2.5 h-2.5" /> JOTA
                         </span>
                       )}
-                      {ex.uses_band && (
+                      {ex.usesBand && (
                         <span className="text-[9px] font-black bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded-md">🪢</span>
                       )}
                     </div>
@@ -410,13 +402,13 @@ export default function BibliotecaPage() {
                           {LEVEL_LABEL[ex.difficulty]}
                         </span>
                       )}
-                      {(ex.primary_muscle || (ex.muscle_groups || [])[0]) && (
+                      {(ex.primaryMuscle || (ex.muscleGroups || [])[0]) && (
                         <span className="text-[10px] text-muted-foreground">
-                          {ex.primary_muscle || ex.muscle_groups[0]}
+                          {ex.primaryMuscle || ex.muscleGroups[0]}
                         </span>
                       )}
-                      {ex.sets_recommended && (
-                        <span className="text-[10px] text-muted-foreground">· {ex.sets_recommended}</span>
+                      {ex.setsRecommended && (
+                        <span className="text-[10px] text-muted-foreground">· {ex.setsRecommended}</span>
                       )}
                     </div>
                   </div>

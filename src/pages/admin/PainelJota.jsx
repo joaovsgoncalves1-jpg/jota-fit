@@ -3,11 +3,13 @@
  * Lista todos os alunos com info essencial e link pro perfil detalhado.
  */
 import React, { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
-import { format, subDays, parseISO, differenceInDays } from 'date-fns';
+import { format, subDays } from 'date-fns';
 import { Users, TrendingUp, Dumbbell, AlertCircle, Search } from 'lucide-react';
 import JotaStudentRow from '@/components/consultant/JotaStudentRow';
+import {
+  useAllProfiles, useAllRoutines, useAllSessions, useAllPRs,
+  recommendationService,
+} from '@/services';
 
 const FILTERS = [
   { key: 'all',       label: 'Todos' },
@@ -21,22 +23,10 @@ export default function PainelJota() {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
 
-  const { data: profiles } = useQuery({
-    queryKey: ['all-profiles-admin'],
-    queryFn: () => base44.entities.StudentProfile.list(),
-  });
-  const { data: routines } = useQuery({
-    queryKey: ['all-routines-admin'],
-    queryFn: () => base44.entities.Routine.list(),
-  });
-  const { data: sessions } = useQuery({
-    queryKey: ['all-sessions-admin'],
-    queryFn: () => base44.entities.WorkoutSession.list('-started_at', 500),
-  });
-  const { data: prs } = useQuery({
-    queryKey: ['all-prs-admin'],
-    queryFn: () => base44.entities.ExercisePersonalRecord.list('-achieved_at', 500),
-  });
+  const { data: profiles } = useAllProfiles();
+  const { data: routines } = useAllRoutines();
+  const { data: sessions } = useAllSessions({ limit: 500 });
+  const { data: prs } = useAllPRs({ limit: 500 });
 
   // Stats topo
   const stats = useMemo(() => {
@@ -45,12 +35,12 @@ export default function PainelJota() {
     const sevenDaysAgo = format(subDays(new Date(), 7), 'yyyy-MM-dd');
     const active7 = (profiles || []).filter(p => {
       return (sessions || []).some(s =>
-        s.student_email === p.email &&
-        (s.finished_at?.slice(0, 10) || s.started_at?.slice(0, 10) || '') >= sevenDaysAgo
+        s.studentEmail === p.email &&
+        (s.finishedAt?.slice(0, 10) || s.startedAt?.slice(0, 10) || '') >= sevenDaysAgo
       );
     }).length;
     const todayCount = (sessions || []).filter(s =>
-      (s.finished_at?.startsWith(today) || s.started_at?.startsWith(today))
+      (s.finishedAt?.startsWith(today) || s.startedAt?.startsWith(today))
     ).length;
     const inactive = total - active7;
     return { total, active7, todayCount, inactive };
@@ -59,19 +49,14 @@ export default function PainelJota() {
   // Build enriched list with computed alert state
   const enriched = useMemo(() => {
     return (profiles || []).map(p => {
-      const studentSessions = (sessions || []).filter(s => s.student_email === p.email);
-      const studentPRs = (prs || []).filter(r => r.student_email === p.email);
-      const activeRoutine = (routines || []).find(r => r.student_email === p.email && r.is_active)
-        || (routines || []).find(r => r.student_email === p.email);
-
-      const lastDate = [...studentSessions]
-        .filter(s => s.status === 'completed' || !s.status)
-        .sort((a, b) => (b.finished_at || b.started_at || '').localeCompare(a.finished_at || a.started_at || ''))[0]
-        ?.finished_at?.slice(0, 10) || null;
-      const daysSince = lastDate ? differenceInDays(new Date(), parseISO(lastDate)) : null;
-      const hasAlert = !activeRoutine || daysSince === null || daysSince >= 7;
-
-      return { profile: p, studentSessions, studentPRs, activeRoutine, hasAlert, daysSince };
+      const studentSessions = (sessions || []).filter(s => s.studentEmail === p.email);
+      const studentPRs = (prs || []).filter(r => r.studentEmail === p.email);
+      const activeRoutine = (routines || []).find(r => r.studentEmail === p.email && r.isActive)
+        || (routines || []).find(r => r.studentEmail === p.email);
+      const snap = recommendationService.computeStudentSnapshot({
+        profile: p, sessions: studentSessions, prs: studentPRs, activeRoutine,
+      });
+      return { profile: p, studentSessions, studentPRs, ...snap };
     });
   }, [profiles, sessions, prs, routines]);
 
@@ -81,14 +66,12 @@ export default function PainelJota() {
         const q = search.toLowerCase();
         if (!profile.name?.toLowerCase().includes(q) && !profile.email?.toLowerCase().includes(q)) return false;
       }
-      const status = profile.consultant_status || 'ativo';
+      const status = profile.consultantStatus || 'ativo';
       if (filter === 'all') return true;
       if (filter === 'alert') return hasAlert;
       return status === filter;
     }).sort((a, b) => {
-      // Alunos com alerta primeiro
       if (a.hasAlert !== b.hasAlert) return a.hasAlert ? -1 : 1;
-      // Depois por atividade recente
       return (b.daysSince ?? 999) - (a.daysSince ?? 999) * -1;
     });
   }, [enriched, search, filter]);
@@ -102,7 +85,6 @@ export default function PainelJota() {
 
   return (
     <div className="max-w-2xl mx-auto p-4 pb-8 space-y-4">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-display text-xl font-black">PAINEL JOTA</h1>
@@ -111,7 +93,6 @@ export default function PainelJota() {
         <div className="text-2xl">⭐</div>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-4 gap-2">
         {STATS.map(s => (
           <div key={s.label} className="bg-card border border-border rounded-2xl p-3 text-center">
@@ -122,7 +103,6 @@ export default function PainelJota() {
         ))}
       </div>
 
-      {/* Search */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <input
@@ -133,7 +113,6 @@ export default function PainelJota() {
         />
       </div>
 
-      {/* Filters */}
       <div className="flex gap-2 overflow-x-auto pb-1">
         {FILTERS.map(f => (
           <button
@@ -149,7 +128,6 @@ export default function PainelJota() {
         ))}
       </div>
 
-      {/* Lista */}
       <div className="space-y-2">
         {filtered.map(({ profile, studentSessions, studentPRs, activeRoutine }) => (
           <JotaStudentRow
