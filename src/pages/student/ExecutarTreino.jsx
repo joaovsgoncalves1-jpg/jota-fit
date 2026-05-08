@@ -11,6 +11,7 @@ import { Trophy } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import WorkoutHeader from '@/components/treino/WorkoutHeader';
 import ExerciseCard from '@/components/treino/ExerciseCard';
+import WorkoutSummaryModal from '@/components/treino/WorkoutSummaryModal';
 
 // XP formula
 function calcXP(setCount, volumeKg) {
@@ -41,6 +42,7 @@ export default function ExecutarTreino() {
   const startTime = useRef(new Date());
   const [finishing, setFinishing] = useState(false);
   const [prQueue, setPrQueue] = useState([]);
+  const [summary, setSummary] = useState(null);
 
   // ── Queries ──
   const { data: routine } = useQuery({
@@ -96,10 +98,11 @@ export default function ExecutarTreino() {
   // ── Finish workout ──
   const finishMutation = useMutation({
     mutationFn: async () => {
-      const durationMinutes = Math.round((new Date() - startTime.current) / 60000);
+      const durationMinutes = Math.max(1, Math.round((new Date() - startTime.current) / 60000));
       const setLogs = await base44.entities.SetLog.filter({ session_id: sessionId });
       const totalVolume = setLogs.reduce((acc, s) => acc + ((s.weight_kg || 0) * (s.reps || 1)), 0);
-      const prsCount = setLogs.filter(s => s.is_pr).length;
+      const prSets = setLogs.filter(s => s.is_pr);
+      const prsCount = prSets.length;
       const xpEarned = calcXP(setLogs.length, totalVolume) + prsCount * 25;
 
       await base44.entities.WorkoutSession.update(sessionId, {
@@ -119,13 +122,35 @@ export default function ExecutarTreino() {
         });
       }
 
-      return { xpEarned, prsCount };
+      // Fetch the actual PR records created in this session for richer cards
+      let prRecords = [];
+      if (prsCount > 0) {
+        const allMyPRs = await base44.entities.ExercisePersonalRecord.filter({ student_email: user?.email });
+        prRecords = (allMyPRs || []).filter(p => p.session_id === sessionId);
+      }
+
+      return {
+        xpEarned,
+        prsCount,
+        prs: prRecords,
+        durationMinutes,
+        totalVolume: Math.round(totalVolume),
+        setsCompleted: setLogs.length,
+        exercisesCompleted: (routineExercises || []).length,
+        routineName: routine?.name,
+        streak: profile?.current_streak || 0,
+      };
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries();
-      navigate('/rotina');
+      setSummary(data);
     },
   });
+
+  const handleCloseSummary = () => {
+    setSummary(null);
+    navigate('/rotina');
+  };
 
   const sortedExercises = useMemo(
     () => [...(routineExercises || [])].sort((a, b) => (a.order || 0) - (b.order || 0)),
@@ -190,6 +215,13 @@ export default function ExecutarTreino() {
           </div>
         )}
       </div>
+
+      {/* Summary modal on finish */}
+      <WorkoutSummaryModal
+        open={!!summary}
+        summary={summary}
+        onClose={handleCloseSummary}
+      />
     </div>
   );
 }
