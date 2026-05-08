@@ -57,6 +57,9 @@ export default function ExerciseDetailSheet({ exercise, open, onClose, onAddToRo
                     {exercise.is_jota_original && (
                       <span className="text-[10px] font-black bg-gold/20 text-gold px-2 py-0.5 rounded-md">⭐ JOTA</span>
                     )}
+                    {exercise.verified_by_jota && !exercise.is_jota_original && (
+                      <span className="text-[10px] font-black bg-gold/15 text-gold px-2 py-0.5 rounded-md">✓ VERIFICADO PELO JOTA</span>
+                    )}
                     {exercise.uses_band && (
                       <span className="text-[10px] font-black bg-green-500/20 text-green-400 px-2 py-0.5 rounded-md">🪢 ELÁSTICO</span>
                     )}
