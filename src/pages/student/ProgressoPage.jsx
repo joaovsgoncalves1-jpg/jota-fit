@@ -294,8 +294,10 @@ export default function ProgressoPage() {
                     if (pr.record_type === 'max_weight') return `${pr.weight_kg}kg × ${pr.reps} reps`;
                     if (pr.record_type === 'max_reps') return `${pr.reps} reps`;
                     if (pr.record_type === 'max_duration') return `${pr.duration_seconds}s`;
-                    if (pr.record_type === 'band_reduction') return `Elástico ${pr.band_level}`;
+                    if (pr.record_type === 'band_reduction') return `🪢 Elástico mais leve: ${pr.band_level}`;
                     if (pr.record_type === 'first_without_band') return '🎉 Primeira sem elástico!';
+                    if (pr.record_type === 'max_reps_with_band') return `${pr.reps} reps c/ elástico ${pr.band_level}`;
+                    if (pr.record_type === 'max_duration_with_band') return `${pr.duration_seconds}s c/ elástico ${pr.band_level}`;
                     return pr.context || '—';
                   };
                   return (

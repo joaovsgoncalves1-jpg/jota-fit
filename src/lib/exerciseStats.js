@@ -145,7 +145,11 @@ export function formatPRMessage(pr, exerciseName) {
     case 'band_reduction':
       return `Você evoluiu no ${name}: agora com elástico ${BAND_LABEL[pr.band_level] || pr.band_level}.`;
     case 'first_without_band':
-      return `🎉 Primeira repetição do ${name} sem elástico!`;
+      return `🎉 Primeira ${pr.duration_seconds ? `do ${name} sem elástico (${pr.duration_seconds}s)` : `repetição do ${name} sem elástico`}!`;
+    case 'max_reps_with_band':
+      return `Mais reps no ${name} com elástico ${BAND_LABEL[pr.band_level] || pr.band_level}: ${pr.reps} reps.`;
+    case 'max_duration_with_band':
+      return `Hold mais longo no ${name} com elástico ${BAND_LABEL[pr.band_level] || pr.band_level}: ${pr.duration_seconds}s.`;
     case 'first_rep':
       return `Primeira execução registrada do ${name}!`;
     default:
@@ -164,6 +168,8 @@ export function getPRMeta(prType) {
     max_duration:      { emoji: '⏱️', label: 'Tempo máximo',     color: 'text-purple-400',  bg: 'bg-purple-400/10',  border: 'border-purple-400/30' },
     band_reduction:    { emoji: '🪢', label: 'Elástico mais leve', color: 'text-green-400', bg: 'bg-green-400/10',   border: 'border-green-400/30' },
     first_without_band:{ emoji: '🎉', label: 'Sem elástico!',    color: 'text-gold',        bg: 'bg-gold/10',        border: 'border-gold/30' },
+    max_reps_with_band:{ emoji: '🔥', label: 'Reps com elástico', color: 'text-green-400', bg: 'bg-green-400/10',   border: 'border-green-400/30' },
+    max_duration_with_band: { emoji: '⏱️', label: 'Hold com elástico', color: 'text-green-400', bg: 'bg-green-400/10', border: 'border-green-400/30' },
     first_rep:         { emoji: '🌟', label: 'Primeira vez',     color: 'text-foreground',  bg: 'bg-muted/30',       border: 'border-border' },
   };
   return map[prType] || map.first_rep;

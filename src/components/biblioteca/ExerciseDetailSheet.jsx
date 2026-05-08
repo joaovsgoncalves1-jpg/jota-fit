@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Heart, Plus, ChevronDown, ChevronUp, TrendingUp } from 'lucide-react';
 import ExerciseStatsPanel from './ExerciseStatsPanel';
 import ProgressionPath from './ProgressionPath';
+import BandGuide from './BandGuide';
 
 const LEVEL_BADGE = {
   beginner: 'bg-success/20 text-success',
@@ -183,15 +184,9 @@ export default function ExerciseDetailSheet({ exercise, open, onClose, onAddToRo
                 </div>
               )}
 
-              {/* Band details */}
-              {exercise.uses_band && (
-                <div className="bg-green-500/5 border border-green-500/20 rounded-xl p-3 mb-4 space-y-1.5">
-                  <p className="text-xs font-bold text-green-400 mb-2">🪢 Informações do Elástico</p>
-                  {exercise.band_usage_type && <p className="text-xs text-foreground">Uso: <span className="text-muted-foreground">{exercise.band_usage_type}</span></p>}
-                  {exercise.band_assistance_level && <p className="text-xs text-foreground">Intensidade: <span className="text-muted-foreground">{BAND_LABEL[exercise.band_assistance_level]}</span></p>}
-                  {exercise.band_anchor_point && <p className="text-xs text-foreground">Ancoragem: <span className="text-muted-foreground">{exercise.band_anchor_point}</span></p>}
-                  {exercise.band_purpose && <p className="text-xs text-foreground">Propósito: <span className="text-muted-foreground">{exercise.band_purpose}</span></p>}
-                </div>
+              {/* Band guide — sistema central de elásticos */}
+              {(exercise.uses_band || exercise.tracking_type === 'assisted_bodyweight') && (
+                <BandGuide exercise={exercise} />
               )}
 
               {/* Tips */}
