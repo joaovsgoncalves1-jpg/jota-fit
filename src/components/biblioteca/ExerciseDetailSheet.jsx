@@ -3,7 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/lib/useCurrentUser';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Heart, Plus, ChevronDown, ChevronUp, Trophy, TrendingUp } from 'lucide-react';
+import { X, Heart, Plus, ChevronDown, ChevronUp, TrendingUp } from 'lucide-react';
+import ExerciseStatsPanel from './ExerciseStatsPanel';
 
 const LEVEL_BADGE = {
   beginner: 'bg-success/20 text-success',
@@ -23,74 +24,6 @@ function getYoutubeId(url) {
   if (!url) return null;
   const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([^&?/]+)/);
   return m ? m[1] : null;
-}
-
-function ExerciseHistory({ exerciseId, email }) {
-  const { data: sets } = useQuery({
-    queryKey: ['exercise-sets', exerciseId, email],
-    queryFn: () => base44.entities.SetLog.filter({ student_email: email, exercise_id: exerciseId }),
-    enabled: !!exerciseId && !!email,
-  });
-  const { data: prs } = useQuery({
-    queryKey: ['exercise-prs', exerciseId, email],
-    queryFn: () => base44.entities.ExercisePersonalRecord.filter({ student_email: email, exercise_id: exerciseId }),
-    enabled: !!exerciseId && !!email,
-  });
-
-  if (!sets || sets.length === 0) {
-    return (
-      <div className="bg-muted/20 rounded-xl p-4 text-center">
-        <p className="text-sm text-muted-foreground">Nenhum histórico ainda</p>
-        <p className="text-xs text-muted-foreground mt-1">Após o primeiro treino sua evolução aparecerá aqui</p>
-      </div>
-    );
-  }
-
-  // Group by session
-  const sessions = {};
-  sets.forEach(s => {
-    const key = s.session_id || s.created_date?.slice(0, 10) || 'unknown';
-    if (!sessions[key]) sessions[key] = [];
-    sessions[key].push(s);
-  });
-  const sortedSessions = Object.entries(sessions).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 3);
-
-  const maxPR = prs?.find(p => p.record_type === 'max_weight');
-
-  return (
-    <div className="space-y-3">
-      {maxPR && (
-        <div className="bg-gold/10 border border-gold/20 rounded-xl p-3 flex items-center gap-3">
-          <Trophy className="w-5 h-5 text-gold shrink-0" />
-          <div>
-            <p className="text-xs font-bold text-gold">Recorde Pessoal</p>
-            <p className="text-sm font-bold">{maxPR.weight_kg}kg × {maxPR.reps} reps</p>
-          </div>
-        </div>
-      )}
-      {sortedSessions.map(([key, sessionSets]) => {
-        const date = sessionSets[0]?.created_date?.slice(0, 10) || key;
-        return (
-          <div key={key} className="bg-muted/20 rounded-xl p-3">
-            <p className="text-xs text-muted-foreground mb-2">{date}</p>
-            <div className="space-y-1">
-              {sessionSets.sort((a, b) => a.set_number - b.set_number).map((s, i) => (
-                <div key={i} className="flex justify-between text-xs">
-                  <span className="text-muted-foreground">Série {s.set_number}</span>
-                  <span className="font-bold">
-                    {s.weight_kg ? `${s.weight_kg}kg × ${s.reps}` :
-                     s.reps ? `${s.reps} reps` :
-                     s.duration_seconds ? `${s.duration_seconds}s` :
-                     s.band_assistance_level ? `Elástico ${BAND_LABEL[s.band_assistance_level]} × ${s.reps || '—'}` : '—'}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
 }
 
 export default function ExerciseDetailSheet({ exercise, open, onClose, onAddToRoutine, isFavorite, onToggleFav }) {
@@ -283,7 +216,7 @@ export default function ExerciseDetailSheet({ exercise, open, onClose, onAddToRo
                       <motion.div
                         initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
                         className="overflow-hidden mt-2">
-                        <ExerciseHistory exerciseId={exercise.id} email={user.email} />
+                        <ExerciseStatsPanel exerciseId={exercise.id} email={user.email} trackingType={exercise.tracking_type} />
                       </motion.div>
                     )}
                   </AnimatePresence>
