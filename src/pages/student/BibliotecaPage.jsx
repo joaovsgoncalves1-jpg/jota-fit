@@ -2,10 +2,11 @@ import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/lib/useCurrentUser';
-import { Search, Filter, Heart, Plus, X, ChevronDown, ChevronUp, Dumbbell } from 'lucide-react';
+import { Search, Filter, Heart, Plus, X, ChevronDown, ChevronUp, Dumbbell, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ExerciseDetailSheet from '@/components/biblioteca/ExerciseDetailSheet';
 import AddToRoutineModal from '@/components/biblioteca/AddToRoutineModal';
+import QuickFilterChips from '@/components/biblioteca/QuickFilterChips';
 
 const MOVEMENT_FILTERS = [
   { key: '', label: 'Todos' },
@@ -13,6 +14,8 @@ const MOVEMENT_FILTERS = [
   { key: 'empurrar_horizontal', label: '→ Empurrar' },
   { key: 'agachamento', label: '🦵 Pernas' },
   { key: 'hinge', label: '🍑 Quadril' },
+  { key: 'panturrilha', label: '🦶 Panturrilha' },
+  { key: 'abducao_quadril', label: '↔ Abdução' },
   { key: 'core_flexao', label: '🔥 Core' },
   { key: 'isometria', label: '⏱ Isometria' },
   { key: 'mobilidade', label: '🤸 Mobilidade' },
@@ -22,6 +25,30 @@ const MOVEMENT_FILTERS = [
   { key: 'empurrar', label: '↙ Empurrar+' },
   { key: 'core', label: '🔥 Core+' },
   { key: 'pernas', label: '🦵 Pernas+' },
+];
+
+const LEVEL_FILTERS = [
+  { key: 'beginner', label: 'Iniciante' },
+  { key: 'intermediate', label: 'Intermediário' },
+  { key: 'advanced', label: 'Avançado' },
+];
+
+const LOCATION_FILTERS = [
+  { key: 'academia', label: '🏋️ Academia' },
+  { key: 'casa', label: '🏠 Casa' },
+  { key: 'parque', label: '🌳 Parque' },
+  { key: 'barra', label: 'Barra fixa' },
+  { key: 'paralelas', label: 'Paralelas' },
+  { key: 'argolas', label: 'Argolas' },
+  { key: 'solo', label: 'Solo' },
+];
+
+const TRACKING_FILTERS = [
+  { key: 'weight_reps', label: '⚖️ Carga × Reps' },
+  { key: 'bodyweight_reps', label: '💪 Peso corporal' },
+  { key: 'assisted_bodyweight', label: '🪢 Assistido' },
+  { key: 'hold_time', label: '⏱ Hold' },
+  { key: 'mobility_time', label: '🤸 Mobilidade' },
 ];
 
 const MUSCLE_FILTERS = [
@@ -86,7 +113,12 @@ export default function BibliotecaPage() {
   const [muscle, setMuscle] = useState('');
   const [equipment, setEquipment] = useState('');
   const [exType, setExType] = useState('');
+  const [level, setLevel] = useState('');
+  const [location, setLocation] = useState('');
+  const [tracking, setTracking] = useState('');
   const [onlyBand, setOnlyBand] = useState(false);
+  const [onlyJota, setOnlyJota] = useState(false);
+  const [quickFilter, setQuickFilter] = useState(''); // calistenia | musculacao | band | jota
   const [showFilters, setShowFilters] = useState(false);
   const [selectedExercise, setSelectedExercise] = useState(null);
   const [addToRoutineExercise, setAddToRoutineExercise] = useState(null);
@@ -101,6 +133,13 @@ export default function BibliotecaPage() {
 
   const filtered = useMemo(() => {
     let list = exercises || [];
+
+    // Quick filter (top chips)
+    if (quickFilter === 'calistenia') list = list.filter(e => e.exercise_type === 'calistenia');
+    else if (quickFilter === 'musculacao') list = list.filter(e => e.exercise_type === 'musculacao');
+    else if (quickFilter === 'band') list = list.filter(e => e.uses_band);
+    else if (quickFilter === 'jota') list = list.filter(e => e.verified_by_jota || e.is_jota_original);
+
     const q = search.toLowerCase();
     if (q) list = list.filter(e =>
       e.name?.toLowerCase().includes(q) ||
@@ -119,9 +158,13 @@ export default function BibliotecaPage() {
       (e.equipment_needed || []).includes(equipment)
     );
     if (exType) list = list.filter(e => e.exercise_type === exType);
+    if (level) list = list.filter(e => e.difficulty === level);
+    if (location) list = list.filter(e => (e.location || []).includes(location));
+    if (tracking) list = list.filter(e => e.tracking_type === tracking);
     if (onlyBand) list = list.filter(e => e.uses_band);
+    if (onlyJota) list = list.filter(e => e.verified_by_jota || e.is_jota_original);
     return list;
-  }, [exercises, search, movement, muscle, equipment, exType, onlyBand]);
+  }, [exercises, search, movement, muscle, equipment, exType, level, location, tracking, onlyBand, onlyJota, quickFilter]);
 
   const toggleFav = (id) => {
     setFavorites(prev => {
@@ -131,8 +174,13 @@ export default function BibliotecaPage() {
     });
   };
 
-  const hasFilters = movement || muscle || equipment || exType || onlyBand;
-  const clearFilters = () => { setMovement(''); setMuscle(''); setEquipment(''); setExType(''); setOnlyBand(false); };
+  const hasFilters = movement || muscle || equipment || exType || level || location || tracking || onlyBand || onlyJota;
+  const clearFilters = () => {
+    setMovement(''); setMuscle(''); setEquipment(''); setExType('');
+    setLevel(''); setLocation(''); setTracking('');
+    setOnlyBand(false); setOnlyJota(false);
+  };
+  const advancedCount = [muscle, equipment, exType, level, location, tracking, onlyBand && 'b', onlyJota && 'j'].filter(Boolean).length;
 
   // Show only first 12 unique movement keys
   const movementOptions = MOVEMENT_FILTERS.filter(m => {
@@ -167,6 +215,9 @@ export default function BibliotecaPage() {
           )}
         </div>
 
+        {/* Quick filters: Calistenia · Musculação · Elástico · Jota */}
+        <QuickFilterChips active={quickFilter} onToggle={setQuickFilter} />
+
         {/* Movement chips */}
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
           {movementOptions.map(p => (
@@ -189,17 +240,12 @@ export default function BibliotecaPage() {
           <button
             onClick={() => setShowFilters(s => !s)}
             className={`flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-xl border transition-all
-              ${hasFilters ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-card border-border text-muted-foreground'}`}
+              ${advancedCount > 0 ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-card border-border text-muted-foreground'}`}
           >
             <Filter className="w-3.5 h-3.5" />
-            Filtros {hasFilters ? `(${[muscle, equipment, exType, onlyBand ? 'banda' : ''].filter(Boolean).length})` : ''}
+            Mais filtros{advancedCount > 0 ? ` (${advancedCount})` : ''}
             {showFilters ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
           </button>
-          {onlyBand && (
-            <button onClick={() => setOnlyBand(false)} className="text-xs bg-green-500/10 border border-green-500/30 text-green-400 font-bold px-2 py-1 rounded-lg flex items-center gap-1">
-              🪢 Elástico <X className="w-3 h-3" />
-            </button>
-          )}
           {hasFilters && (
             <button onClick={clearFilters} className="text-xs text-muted-foreground hover:text-foreground ml-auto">
               Limpar
@@ -255,14 +301,62 @@ export default function BibliotecaPage() {
                     ))}
                   </div>
                 </div>
-                {/* Band toggle */}
-                <button
-                  onClick={() => setOnlyBand(b => !b)}
-                  className={`flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-xl border transition-all
-                    ${onlyBand ? 'bg-green-500/10 border-green-500/30 text-green-400' : 'bg-card border-border text-muted-foreground'}`}
-                >
-                  🪢 Apenas com elástico
-                </button>
+                {/* Level */}
+                <div>
+                  <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wide mb-1.5">Nível</p>
+                  <div className="flex gap-1.5 flex-wrap">
+                    {LEVEL_FILTERS.map(f => (
+                      <button key={f.key} onClick={() => setLevel(level === f.key ? '' : f.key)}
+                        className={`text-xs font-bold px-3 py-1.5 rounded-xl border transition-all
+                          ${level === f.key ? 'bg-primary text-primary-foreground border-primary' : 'bg-card border-border text-muted-foreground'}`}>
+                        {f.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {/* Location */}
+                <div>
+                  <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wide mb-1.5">Local</p>
+                  <div className="flex gap-1.5 flex-wrap">
+                    {LOCATION_FILTERS.map(f => (
+                      <button key={f.key} onClick={() => setLocation(location === f.key ? '' : f.key)}
+                        className={`text-xs font-bold px-3 py-1.5 rounded-xl border transition-all
+                          ${location === f.key ? 'bg-primary text-primary-foreground border-primary' : 'bg-card border-border text-muted-foreground'}`}>
+                        {f.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {/* Tracking */}
+                <div>
+                  <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wide mb-1.5">Como registra</p>
+                  <div className="flex gap-1.5 flex-wrap">
+                    {TRACKING_FILTERS.map(f => (
+                      <button key={f.key} onClick={() => setTracking(tracking === f.key ? '' : f.key)}
+                        className={`text-xs font-bold px-3 py-1.5 rounded-xl border transition-all
+                          ${tracking === f.key ? 'bg-primary text-primary-foreground border-primary' : 'bg-card border-border text-muted-foreground'}`}>
+                        {f.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {/* Toggles */}
+                <div className="flex gap-2 flex-wrap">
+                  <button
+                    onClick={() => setOnlyBand(b => !b)}
+                    className={`flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-xl border transition-all
+                      ${onlyBand ? 'bg-green-500/10 border-green-500/30 text-green-400' : 'bg-card border-border text-muted-foreground'}`}
+                  >
+                    🪢 Apenas com elástico
+                  </button>
+                  <button
+                    onClick={() => setOnlyJota(j => !j)}
+                    className={`flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-xl border transition-all
+                      ${onlyJota ? 'bg-gold/10 border-gold/30 text-gold' : 'bg-card border-border text-muted-foreground'}`}
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Verificado pelo Jota
+                  </button>
+                </div>
               </div>
             </motion.div>
           )}
@@ -299,6 +393,11 @@ export default function BibliotecaPage() {
                     <div className="flex items-center gap-1.5 mb-0.5">
                       {ex.is_jota_original && (
                         <span className="text-[9px] font-black bg-gold/20 text-gold px-1.5 py-0.5 rounded-md">JOTA</span>
+                      )}
+                      {ex.verified_by_jota && !ex.is_jota_original && (
+                        <span className="text-[9px] font-black bg-gold/15 text-gold px-1.5 py-0.5 rounded-md flex items-center gap-0.5">
+                          <CheckCircle2 className="w-2.5 h-2.5" /> JOTA
+                        </span>
                       )}
                       {ex.uses_band && (
                         <span className="text-[9px] font-black bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded-md">🪢</span>
