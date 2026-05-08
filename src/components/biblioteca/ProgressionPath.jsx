@@ -65,31 +65,41 @@ export default function ProgressionPath({ exerciseId, onSelectExercise }) {
     enabled: !!exerciseId,
   });
 
-  // Resolve previous and next exercises
-  const prevId = progression?.previous_exercise_id;
-  const nextId = progression?.next_exercise_id;
+  // Resolve previous and next exercises (suporta legado snake_case OU camelCase)
+  const prevId = progression?.previous_exercise_id || progression?.previousExerciseId;
+  const nextId = progression?.next_exercise_id || progression?.nextExerciseId;
+  const progType = progression?.progression_type || progression?.progressionType;
+  const requirement = progression?.requirement_to_unlock || progression?.requirementToUnlock;
+  const notes = progression?.notes;
+  const difficultyOrder = progression?.difficulty_order || progression?.difficultyOrder || 0;
 
   const { data: relatedExercises } = useQuery({
     queryKey: ['progression-related', prevId, nextId, exerciseId],
     queryFn: async () => {
       const ids = [prevId, exerciseId, nextId].filter(Boolean);
       if (!ids.length) return [];
-      const list = await base44.entities.Exercise.filter({ id: { $in: ids } });
-      return list;
+      try {
+        const list = await base44.entities.Exercise.filter({ id: { $in: ids } });
+        return list || [];
+      } catch {
+        return [];
+      }
     },
-    enabled: !!progression,
+    enabled: !!progression && (!!prevId || !!nextId),
   });
 
-  if (isLoading || !progression) return null;
-  if (!relatedExercises) return null;
+  if (isLoading) return null;
+  if (!progression) return null;
+  // Sem prev nem next → não há trilha pra mostrar
+  if (!prevId && !nextId) return null;
 
-  const findEx = (id) => relatedExercises.find(e => e.id === id);
+  const findEx = (id) => (relatedExercises || []).find(e => e.id === id);
   const prev = findEx(prevId);
   const current = findEx(exerciseId);
   const next = findEx(nextId);
 
-  const typeLabel = TYPE_LABEL[progression.progression_type] || progression.progression_type;
-  const typeBadge = TYPE_BADGE[progression.progression_type] || 'bg-muted/20 text-muted-foreground border-border/40';
+  const typeLabel = TYPE_LABEL[progType] || progType;
+  const typeBadge = TYPE_BADGE[progType] || 'bg-muted/20 text-muted-foreground border-border/40';
 
   return (
     <motion.div
@@ -102,7 +112,7 @@ export default function ProgressionPath({ exerciseId, onSelectExercise }) {
           <Trophy className="w-4 h-4 text-primary" />
           <p className="text-xs font-black uppercase tracking-wider">Sua trilha</p>
         </div>
-        {progression.progression_type && (
+        {progType && (
           <span className={`text-[10px] font-bold px-2 py-1 rounded-lg border ${typeBadge}`}>
             {typeLabel}
           </span>
@@ -142,28 +152,28 @@ export default function ProgressionPath({ exerciseId, onSelectExercise }) {
       </div>
 
       {/* Requirement to unlock next */}
-      {progression.requirement_to_unlock && next && (
+      {requirement && next && (
         <div className="mt-3 bg-primary/5 border border-primary/20 rounded-xl p-3 flex items-start gap-2">
           <Target className="w-4 h-4 text-primary mt-0.5 shrink-0" />
           <div className="flex-1">
             <p className="text-[10px] font-bold uppercase tracking-wider text-primary mb-0.5">
               Para destravar {next.name}
             </p>
-            <p className="text-sm font-bold text-foreground">{progression.requirement_to_unlock}</p>
+            <p className="text-sm font-bold text-foreground">{requirement}</p>
           </div>
         </div>
       )}
 
       {/* Note from Jota */}
-      {progression.notes && (
+      {notes && (
         <div className="mt-2 bg-gold/5 border border-gold/20 rounded-xl p-3">
           <p className="text-[10px] font-bold uppercase tracking-wider text-gold mb-1">⭐ Nota do Jota</p>
-          <p className="text-xs text-foreground leading-relaxed">{progression.notes}</p>
+          <p className="text-xs text-foreground leading-relaxed">{notes}</p>
         </div>
       )}
 
       {/* Final-step celebration */}
-      {!next && progression.difficulty_order > 1 && (
+      {!next && difficultyOrder > 1 && (
         <div className="mt-3 bg-success/10 border border-success/30 rounded-xl p-3 text-center">
           <p className="text-xs font-black text-success">🏆 Topo da progressão!</p>
         </div>

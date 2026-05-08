@@ -120,7 +120,14 @@ export default function WorkoutSummaryModal({ open, summary, onClose }) {
               {/* Stats grid */}
               <div className="grid grid-cols-3 gap-2 mb-4">
                 <StatTile icon={Clock} label="Duração" value={durationStr} color="text-foreground" delay={0.5} />
-                <StatTile icon={Dumbbell} label="Séries" value={summary.setsCompleted} sub={`de ${summary.exercisesCompleted} ex.`} color="text-foreground" delay={0.55} />
+                <StatTile
+                  icon={Dumbbell}
+                  label="Séries"
+                  value={summary.setsCompleted ?? 0}
+                  sub={summary.exercisesCompleted ? `de ${summary.exercisesCompleted} ex.` : null}
+                  color="text-foreground"
+                  delay={0.55}
+                />
                 {summary.totalVolume > 0 && (
                   <StatTile icon={TrendingUp} label="Volume" value={`${summary.totalVolume}kg`} color="text-blue-400" delay={0.6} />
                 )}

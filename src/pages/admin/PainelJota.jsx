@@ -6,6 +6,7 @@ import React, { useState, useMemo } from 'react';
 import { format, subDays } from 'date-fns';
 import { Users, TrendingUp, Dumbbell, AlertCircle, Search } from 'lucide-react';
 import JotaStudentRow from '@/components/consultant/JotaStudentRow';
+import EmptyState from '@/components/common/EmptyState';
 import {
   useAllProfiles, useAllRoutines, useAllSessions, useAllPRs,
   recommendationService,
@@ -139,10 +140,12 @@ export default function PainelJota() {
           />
         ))}
         {filtered.length === 0 && (
-          <div className="text-center py-12 text-muted-foreground">
-            <Users className="w-12 h-12 mx-auto mb-3 opacity-20" />
-            <p className="text-sm">Nenhum aluno encontrado</p>
-          </div>
+          <EmptyState
+            icon={Users}
+            title="Nenhum aluno encontrado"
+            description="Tente outro filtro ou limpe a busca para ver todos os alunos."
+            tone="subtle"
+          />
         )}
       </div>
     </div>
