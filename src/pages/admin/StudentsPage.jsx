@@ -132,7 +132,7 @@ export default function StudentsPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.02 }}
             >
-              <Link to={`/aluno/${student.id}`}>
+              <Link to={`/admin/students/${encodeURIComponent(student.email)}`}>
                 <div className="flex items-center gap-3 p-3 bg-card rounded-xl border border-border hover:border-primary/30 transition-all">
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/30 to-muted flex items-center justify-center font-bold text-sm shrink-0">
                     {student.name?.[0]?.toUpperCase()}
