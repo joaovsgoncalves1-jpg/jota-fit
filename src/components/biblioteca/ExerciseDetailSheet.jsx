@@ -5,6 +5,7 @@ import { useCurrentUser } from '@/lib/useCurrentUser';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Heart, Plus, ChevronDown, ChevronUp, TrendingUp } from 'lucide-react';
 import ExerciseStatsPanel from './ExerciseStatsPanel';
+import ProgressionPath from './ProgressionPath';
 
 const LEVEL_BADGE = {
   beginner: 'bg-success/20 text-success',
@@ -26,7 +27,7 @@ function getYoutubeId(url) {
   return m ? m[1] : null;
 }
 
-export default function ExerciseDetailSheet({ exercise, open, onClose, onAddToRoutine, isFavorite, onToggleFav }) {
+export default function ExerciseDetailSheet({ exercise, open, onClose, onAddToRoutine, onSwitchExercise, isFavorite, onToggleFav }) {
   const { user } = useCurrentUser();
   const [showHistory, setShowHistory] = useState(false);
   const ytId = getYoutubeId(exercise?.video_url);
@@ -162,6 +163,12 @@ export default function ExerciseDetailSheet({ exercise, open, onClose, onAddToRo
                   </div>
                 </div>
               )}
+
+              {/* Progression path (calistenia / skill) */}
+              <ProgressionPath
+                exerciseId={exercise.id}
+                onSelectExercise={(ex) => onSwitchExercise?.(ex)}
+              />
 
               {/* Description */}
               {exercise.description && (

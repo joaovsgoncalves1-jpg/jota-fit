@@ -457,6 +457,7 @@ export default function BibliotecaPage() {
         open={!!selectedExercise}
         onClose={() => setSelectedExercise(null)}
         onAddToRoutine={(ex) => { setSelectedExercise(null); setAddToRoutineExercise(ex); }}
+        onSwitchExercise={(ex) => setSelectedExercise(ex)}
         isFavorite={selectedExercise ? favorites.includes(selectedExercise.id) : false}
         onToggleFav={() => selectedExercise && toggleFav(selectedExercise.id)}
       />
