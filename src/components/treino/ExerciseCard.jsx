@@ -12,6 +12,7 @@ import {
   Timer, Info, Zap, Target
 } from 'lucide-react';
 import RestTimerOverlay from './RestTimerOverlay';
+import BandSelector from './BandSelector';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const TRACKING_META = {
@@ -23,8 +24,7 @@ const TRACKING_META = {
   unilateral:          { labelA: 'kg',        labelB: 'reps', stepA: 2.5, stepB: 1, isTime: false },
 };
 
-const BAND_LEVELS = ['muito_forte', 'forte', 'medio', 'leve'];
-const BAND_LABEL  = { muito_forte: 'Muito forte', forte: 'Forte', medio: 'Médio', leve: 'Leve' };
+import { BAND_LABEL } from '@/lib/bands';
 
 // ─── NumericStepper ────────────────────────────────────────────────────────────
 function NumericStepper({ value, step, min = 0, onChange, placeholder, disabled, wide }) {
@@ -58,7 +58,7 @@ function NumericStepper({ value, step, min = 0, onChange, placeholder, disabled,
 }
 
 // ─── SetRow ───────────────────────────────────────────────────────────────────
-function SetRow({ set, index, trackingType, onUpdate, onComplete, onCopyLast, isCompleted, isPR, isCurrent, isLoading }) {
+function SetRow({ set, index, trackingType, usesBand, onUpdate, onComplete, onCopyLast, isCompleted, isPR, isCurrent, isLoading }) {
   const meta = TRACKING_META[trackingType] || TRACKING_META.weight_reps;
   const [showRir, setShowRir] = useState(false);
 
@@ -102,17 +102,17 @@ function SetRow({ set, index, trackingType, onUpdate, onComplete, onCopyLast, is
           />
         )}
 
-        {/* Elastic band selector */}
-        {trackingType === 'assisted_bodyweight' && (
-          <select
-            value={set.band || ''}
-            onChange={e => onUpdate({ ...set, band: e.target.value })}
-            disabled={isCompleted}
-            className="flex-1 bg-muted/30 border border-border/60 rounded-xl px-2 py-2 text-xs outline-none focus:border-primary/60 disabled:opacity-40"
-          >
-            <option value="">Sem elástico</option>
-            {BAND_LEVELS.map(b => <option key={b} value={b}>{BAND_LABEL[b]}</option>)}
-          </select>
+        {/* Elastic band selector (level + color) */}
+        {(trackingType === 'assisted_bodyweight' || usesBand) && (
+          <div className="flex-1 min-w-0">
+            <BandSelector
+              level={set.band}
+              color={set.bandColor}
+              disabled={isCompleted}
+              onChangeLevel={v => onUpdate({ ...set, band: v })}
+              onChangeColor={v => onUpdate({ ...set, bandColor: v })}
+            />
+          </div>
         )}
 
         {/* Value B: reps / seconds */}
@@ -191,6 +191,7 @@ export default function ExerciseCard({ routineExercise, exercise, sessionId, stu
       valueA: routineExercise.target_weight_kg || null,
       valueB: null,
       band: routineExercise.band_assistance_level || '',
+      bandColor: '',
       rir: null,
       rpe: null,
     }))
@@ -234,10 +235,13 @@ export default function ExerciseCard({ routineExercise, exercise, sessionId, stu
       return `Manter ${last.weight_kg}kg, foco em técnica`;
     }
     if (trackingType === 'assisted_bodyweight' && last.band_assistance_level) {
-      return `Última vez: elástico ${BAND_LABEL[last.band_assistance_level]}`;
+      const sameBand = lastSessionSets.filter(s => s.band_assistance_level === last.band_assistance_level);
+      const maxReps = Math.max(...sameBand.map(s => s.reps || 0));
+      return `Bata ${maxReps + 1}+ reps com elástico ${BAND_LABEL[last.band_assistance_level]} ou tente mais leve`;
     }
     if (trackingType === 'hold_time' && last.duration_seconds) {
-      return `Superar ${last.duration_seconds}s`;
+      const bandTxt = last.band_assistance_level ? ` (${BAND_LABEL[last.band_assistance_level]})` : '';
+      return `Superar ${last.duration_seconds}s${bandTxt}`;
     }
     return null;
   }, [lastSessionSets, trackingType, routineExercise]);
@@ -246,9 +250,10 @@ export default function ExerciseCard({ routineExercise, exercise, sessionId, stu
   const lastSessionHint = useMemo(() => {
     if (!lastSessionSets?.length) return null;
     return lastSessionSets.map(s => {
+      const bandTxt = s.band_assistance_level ? `[${BAND_LABEL[s.band_assistance_level][0]}]` : '';
       if (s.weight_kg && s.reps) return `${s.weight_kg}×${s.reps}`;
-      if (s.reps) return `${s.reps}r`;
-      if (s.duration_seconds) return `${s.duration_seconds}s`;
+      if (s.reps) return `${s.reps}r${bandTxt}`;
+      if (s.duration_seconds) return `${s.duration_seconds}s${bandTxt}`;
       return null;
     }).filter(Boolean).join(' | ');
   }, [lastSessionSets]);
@@ -282,8 +287,11 @@ export default function ExerciseCard({ routineExercise, exercise, sessionId, stu
       } else if (['bodyweight_reps', 'assisted_bodyweight'].includes(trackingType)) {
         payload.reps = setData.valueB || 0;
         payload.band_assistance_level = setData.band || undefined;
+        payload.band_color = setData.bandColor || undefined;
       } else if (trackingType === 'hold_time') {
         payload.duration_seconds = setData.valueB || 0;
+        payload.band_assistance_level = setData.band || undefined;
+        payload.band_color = setData.bandColor || undefined;
       } else if (trackingType === 'time_distance') {
         payload.duration_seconds = (setData.valueB || 0) * 60;
         payload.weight_kg = setData.valueA || 0;
@@ -299,7 +307,7 @@ export default function ExerciseCard({ routineExercise, exercise, sessionId, stu
 
       if (prResult?.isPR && sessionId) {
         await base44.entities.ExercisePersonalRecord.create(
-          buildPRRecord({ studentEmail, exerciseId: exercise?.id, exerciseName: exercise?.name, set: payload, prResult, sessionId, trackingType })
+          buildPRRecord({ studentEmail, exerciseId: exercise?.id, exerciseName: exercise?.name, set: payload, prResult, sessionId })
         );
       }
 
@@ -336,6 +344,7 @@ export default function ExerciseCard({ routineExercise, exercise, sessionId, stu
         valueA: last.weight_kg || s.valueA,
         valueB: last.reps || last.duration_seconds || s.valueB,
         band: last.band_assistance_level || s.band,
+        bandColor: last.band_color || s.bandColor,
       };
     }));
   };
@@ -470,6 +479,7 @@ export default function ExerciseCard({ routineExercise, exercise, sessionId, stu
                     set={set}
                     index={i}
                     trackingType={trackingType}
+                    usesBand={!!exercise?.uses_band}
                     isCompleted={isCompleted}
                     isPR={isPR}
                     isCurrent={isCurrent && !isCompleted}
@@ -482,6 +492,7 @@ export default function ExerciseCard({ routineExercise, exercise, sessionId, stu
                         valueA: lastForThisSet.weight_kg || s.valueA,
                         valueB: lastForThisSet.reps || lastForThisSet.duration_seconds || s.valueB,
                         band: lastForThisSet.band_assistance_level || s.band,
+                        bandColor: lastForThisSet.band_color || s.bandColor,
                       } : s));
                     } : null}
                   />
@@ -495,6 +506,7 @@ export default function ExerciseCard({ routineExercise, exercise, sessionId, stu
                   valueA: prev[prev.length - 1]?.valueA || null,
                   valueB: null,
                   band: prev[prev.length - 1]?.band || '',
+                  bandColor: prev[prev.length - 1]?.bandColor || '',
                   rir: null, rpe: null,
                 }])}
                 className="w-full flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-primary bg-muted/10 hover:bg-primary/10 rounded-xl py-2 transition-all border border-dashed border-border/40"

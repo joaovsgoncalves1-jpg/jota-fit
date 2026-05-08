@@ -20,7 +20,9 @@
         "max_duration",
         "first_rep",
         "band_reduction",
-        "first_without_band"
+        "first_without_band",
+        "max_reps_with_band",
+        "max_duration_with_band"
       ],
       "description": "Tipo de PR"
     },
@@ -42,6 +44,10 @@
     "band_level": {
       "type": "string",
       "description": "N\u00edvel de el\u00e1stico no PR"
+    },
+    "band_color": {
+      "type": "string",
+      "description": "Cor do el\u00e1stico no PR"
     },
     "context": {
       "type": "string",
