@@ -1,3 +1,9 @@
+**Jota Fit** — app fitness do @jotav.fit
+
+> **Migração (backend próprio):** branch `migrate/own-backend` · status em [`MIGRATION_STATUS.md`](MIGRATION_STATUS.md) · plano em [`docs/migracao/`](docs/migracao/). O app **continua na Base44** por padrão (`VITE_DATA_BACKEND=base44`).
+
+---
+
 **Welcome to your Base44 project** 
 
 **About**

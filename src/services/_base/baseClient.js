@@ -1,12 +1,17 @@
 /**
- * baseClient — único ponto onde os services tocam o Base44.
- * Quando migrarmos pro nosso backend, basta substituir este arquivo (mantendo
- * a interface de cada service intacta).
+ * Ponto único de backend dos services.
+ * Padrão: Base44. Futuro: VITE_DATA_BACKEND=firebase
  */
-import { base44 } from '@/api/base44Client';
+import * as base44Impl from './base44ClientImpl';
+import * as firebaseImpl from './firebaseClient';
 
-export const db = base44.entities;
-export const auth = base44.auth;
-export const integrations = base44.integrations;
-export const users = base44.users;
-export const functions = base44.functions;
+const useFirebase = import.meta.env.VITE_DATA_BACKEND === 'firebase';
+const impl = useFirebase ? firebaseImpl : base44Impl;
+
+export const db = impl.db;
+export const auth = impl.auth;
+export const integrations = impl.integrations;
+export const users = impl.users;
+export const functions = impl.functions;
+
+export const dataBackend = useFirebase ? 'firebase' : 'base44';

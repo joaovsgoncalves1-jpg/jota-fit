@@ -7,6 +7,7 @@ import { useCurrentUser } from '@/lib/useCurrentUser';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { calculateLevel } from '@/lib/gamification';
+import JotaAIChat from '@/components/chat/JotaAIChat';
 
 const NAV_ITEMS = [
   { path: '/', label: 'Home', icon: Home },
@@ -96,6 +97,8 @@ export default function StudentLayout() {
           })}
         </div>
       </nav>
+
+      {import.meta.env.VITE_ENABLE_JOTA_CHAT === 'true' && <JotaAIChat />}
     </div>
   );
 }

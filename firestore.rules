@@ -1,0 +1,47 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userEmail) {
+      return isSignedIn() && request.auth.token.email == userEmail;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.email == 'joaovs.goncalves1@gmail.com';
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Chat IA (Fase 4 — já usado pelo JotaAIChat)
+    match /chats/{userEmail}/messages/{messageId} {
+      allow read, write: if isOwner(userEmail);
+    }
+
+    // MVP Fase 0 — descomentar conforme migrar cada coleção
+    match /studentProfiles/{userEmail} {
+      allow read: if isOwner(userEmail) || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /routines/{routineId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /workoutLogs/{logId} {
+      allow read, create: if isSignedIn();
+      allow update, delete: if isAdmin();
+    }
+
+    match /checkins/{checkinId} {
+      allow read, create: if isSignedIn();
+      allow update, delete: if isOwner(resource.data.studentEmail);
+    }
+  }
+}
