@@ -1,44 +1,14 @@
 /**
- * Implementação Firebase — em construção (MVP Fase 0).
- * Ative com VITE_DATA_BACKEND=firebase após implementar cada entidade.
+ * Dados no Firestore. Auth/invite ainda via Base44 (híbrido até Fase auth).
+ * Ative: VITE_USE_FIREBASE_DATA=true
  */
-import { firebaseAuth, firestoreDb } from '@/lib/firebase';
+import * as base44Impl from './base44ClientImpl';
+import { createFirestoreDb } from './firestoreEntity';
 
-const notReady = (name) => () => {
-  throw new Error(
-    `[firebaseClient] ${name} ainda não migrado. Veja docs/migracao/ENTIDADES-MVP.md`
-  );
-};
+export const db = createFirestoreDb();
 
-/** Proxy até mapear entidades Base44 → coleções Firestore */
-const entityStub = new Proxy(
-  {},
-  {
-    get: (_, prop) => ({
-      filter: notReady(prop),
-      get: notReady(prop),
-      create: notReady(prop),
-      update: notReady(prop),
-      delete: notReady(prop),
-      list: notReady(prop),
-    }),
-  }
-);
-
-export const db = entityStub;
-
-export const auth = {
-  me: notReady('auth.me'),
-  isAuthenticated: async () => !!firebaseAuth.currentUser,
-  updateMe: notReady('auth.updateMe'),
-  logout: async () => {
-    if (firebaseAuth) await firebaseAuth.signOut();
-  },
-  redirectToLogin: notReady('auth.redirectToLogin'),
-};
-
-export const integrations = {};
-export const users = {};
-export const functions = {};
-
-export { firestoreDb };
+/** Auth continua Base44 enquanto login não migrar */
+export const auth = base44Impl.auth;
+export const integrations = base44Impl.integrations;
+export const users = base44Impl.users;
+export const functions = base44Impl.functions;

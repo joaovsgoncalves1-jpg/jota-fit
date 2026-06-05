@@ -4,9 +4,8 @@ import {
   User, Home, ListChecks, TrendingUp, Flame, CalendarDays, BarChart2
 } from 'lucide-react';
 import { useCurrentUser } from '@/lib/useCurrentUser';
-import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
 import { calculateLevel } from '@/lib/gamification';
+import { useMyProfile } from '@/services/studentService';
 import JotaAIChat from '@/components/chat/JotaAIChat';
 
 const NAV_ITEMS = [
@@ -22,21 +21,15 @@ export default function StudentLayout() {
   const navigate = useNavigate();
   const { user, isLoading } = useCurrentUser();
 
-  const { data: profile, isLoading: loadingProfile } = useQuery({
-    queryKey: ['my-profile', user?.email],
-    queryFn: () => base44.entities.StudentProfile.filter({ email: user?.email }),
-    enabled: !!user?.email,
-  });
-
-  const myProfile = profile?.[0];
+  const { data: myProfile, isLoading: loadingProfile } = useMyProfile(user?.email);
   const levelInfo = calculateLevel(myProfile?.xp_total || 0);
 
   // Redirect to onboarding if no profile exists
   useEffect(() => {
-    if (!loadingProfile && profile && profile.length === 0 && user?.role !== 'admin') {
+    if (!loadingProfile && user?.email && !myProfile && user?.role !== 'admin') {
       navigate('/onboarding');
     }
-  }, [loadingProfile, profile, user]);
+  }, [loadingProfile, myProfile, user, navigate]);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">

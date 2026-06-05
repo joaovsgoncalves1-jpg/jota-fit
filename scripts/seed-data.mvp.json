@@ -1,0 +1,61 @@
+{
+  "studentProfiles": [
+    {
+      "email": "aluno.teste@jotafit.local",
+      "name": "Aluno Teste MVP",
+      "xp_total": 120,
+      "current_streak": 2,
+      "max_streak": 5,
+      "active": true,
+      "onboarding_completed": true,
+      "plan_type": "premium",
+      "consultant_status": "ativo"
+    }
+  ],
+  "exercises": [
+    {
+      "name": "Flexão de braço",
+      "slug": "flexao-braco",
+      "exercise_type": "calisthenics",
+      "primary_muscle": "Peitoral",
+      "tracking_type": "bodyweight_reps",
+      "difficulty": "iniciante",
+      "verified_by_jota": true
+    },
+    {
+      "name": "Barra fixa",
+      "slug": "barra-fixa",
+      "exercise_type": "calisthenics",
+      "primary_muscle": "Costas",
+      "tracking_type": "bodyweight_reps",
+      "difficulty": "intermediario",
+      "verified_by_jota": true
+    }
+  ],
+  "routines": [
+    {
+      "name": "Rotina MVP — Peito & Costas",
+      "student_email": "aluno.teste@jotafit.local",
+      "description": "Seed para testar Firebase",
+      "days_of_week": ["seg", "qui"],
+      "is_active": true,
+      "created_by": "jota"
+    }
+  ],
+  "routineExercises": [
+    {
+      "order": 1,
+      "sets": 3,
+      "target_reps": "8-12",
+      "rest_seconds": 90,
+      "_exerciseIndex": 0
+    },
+    {
+      "order": 2,
+      "sets": 3,
+      "target_reps": "5-8",
+      "rest_seconds": 120,
+      "_exerciseIndex": 1
+    }
+  ]
+}

@@ -6,8 +6,8 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function isOwner(userEmail) {
-      return isSignedIn() && request.auth.token.email == userEmail;
+    function isOwnerEmail(email) {
+      return isSignedIn() && request.auth.token.email == email;
     }
 
     function isAdmin() {
@@ -18,30 +18,73 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
-    // Chat IA (Fase 4 — já usado pelo JotaAIChat)
     match /chats/{userEmail}/messages/{messageId} {
-      allow read, write: if isOwner(userEmail);
+      allow read, write: if isOwnerEmail(userEmail);
     }
 
-    // MVP Fase 0 — descomentar conforme migrar cada coleção
-    match /studentProfiles/{userEmail} {
-      allow read: if isOwner(userEmail) || isAdmin();
-      allow write: if isAdmin();
+    match /StudentProfile/{docId} {
+      allow read: if isSignedIn() && (
+        resource.data.email == request.auth.token.email || isAdmin()
+      );
+      allow create: if isSignedIn();
+      allow update, delete: if isAdmin() || (
+        isSignedIn() && resource.data.email == request.auth.token.email
+      );
     }
 
-    match /routines/{routineId} {
+    match /Routine/{docId} {
+      allow read: if isSignedIn() && (
+        resource.data.student_email == request.auth.token.email || isAdmin()
+      );
+      allow write: if isAdmin() || (
+        isSignedIn() && request.resource.data.student_email == request.auth.token.email
+      );
+    }
+
+    match /RoutineExercise/{docId} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /Exercise/{docId} {
       allow read: if isSignedIn();
       allow write: if isAdmin();
     }
 
-    match /workoutLogs/{logId} {
+    match /WorkoutSession/{docId} {
+      allow read, create: if isSignedIn() && (
+        request.resource.data.student_email == request.auth.token.email || isAdmin()
+      );
+      allow update: if isSignedIn() && (
+        resource.data.student_email == request.auth.token.email || isAdmin()
+      );
+    }
+
+    match /SetLog/{docId} {
       allow read, create: if isSignedIn();
       allow update, delete: if isAdmin();
     }
 
-    match /checkins/{checkinId} {
-      allow read, create: if isSignedIn();
-      allow update, delete: if isOwner(resource.data.studentEmail);
+    match /Checkin/{docId} {
+      allow read: if isSignedIn() && (
+        resource.data.student_email == request.auth.token.email || isAdmin()
+      );
+      allow create: if isSignedIn() && request.resource.data.student_email == request.auth.token.email;
+    }
+
+    match /BodyMeasurement/{docId} {
+      allow read, write: if isSignedIn() && (
+        resource.data.student_email == request.auth.token.email || isAdmin()
+      );
+    }
+
+    match /LevelConfig/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /XPConfig/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
     }
   }
 }

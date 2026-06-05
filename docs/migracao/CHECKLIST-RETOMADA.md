@@ -6,36 +6,37 @@ Marque `[x]` quando fizer. **Uma sessão = um bloco.**
 
 ## Sessão A (~30 min) — organização
 
-- [ ] Clonar `jota-fit` em `C:\Users\User\projects\jota-fit`
-- [ ] Branch: `git checkout -b migrate/own-backend`
-- [ ] Copiar esta pasta `jota-fit-migracao` para `jota-fit/docs/migracao/`
-- [ ] Copiar arquivos do Pro (`SALVAR-DO-PRO.md`)
-- [ ] Arquivar repo `Jota-Fit-Pro` no GitHub (não deletar)
+- [x] Clonar `jota-fit` em `C:\Users\User\projects\jota-fit`
+- [x] Branch: `migrate/own-backend`
+- [x] Copiar esta pasta `jota-fit-migracao` para `jota-fit/docs/migracao/`
+- [x] Copiar arquivos do Pro (`SALVAR-DO-PRO.md`)
+- [x] Arquivar repo `Jota-Fit-Pro` no GitHub
 
 ---
 
 ## Sessão B (~45 min) — Firebase
 
-- [ ] Projeto Firebase (ou reutilizar do Pro)
-- [ ] `firestore.rules` mínimas (student só lê/escreve o próprio dado)
-- [ ] `.env.local` no jota-fit (sem Base44)
-- [ ] `src/lib/firebase.js` integrado
+- [x] Projeto Firebase (reutilizar `jota-fitnessapp` do Pro)
+- [x] `firestore.rules` + `firebase.json`
+- [x] `.env.example` documentado
+- [x] `src/lib/firebase.js` integrado
 
 ---
 
 ## Sessão C (~60 min) — dados MVP
 
-- [ ] Coleções Fase 0 (`ENTIDADES-MVP.md`)
-- [ ] Seed manual: 1 aluno teste + 1 rotina
-- [ ] Camada `src/services/` com funções CRUD (sem Base44 SDK)
+- [x] `firestoreEntity.js` (todas coleções)
+- [x] Seed: `scripts/seed-data.mvp.json` + `seed-firebase-mvp.mjs`
+- [x] Services usam `baseClient` (Firebase quando `VITE_USE_FIREBASE_DATA=true`)
 
 ---
 
 ## Sessão D (~60 min) — 1 tela funcionando
 
-- [ ] Tela: aluno vê rotina do dia (dados Firebase)
-- [ ] Tela: marcar treino feito → `WorkoutLog` / `SetLog`
-- [ ] Remover import `@base44/sdk` **só dessas telas**
+- [x] `StudentLayout` sem import direto Base44
+- [ ] Deploy rules + seed no Firebase real
+- [ ] Validar `MinhaRotina` com `VITE_USE_FIREBASE_DATA=true`
+- [ ] Validar `ExecutarTreino` + `SetLog`
 
 ---
 

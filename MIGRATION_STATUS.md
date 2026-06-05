@@ -3,38 +3,39 @@
 **Branch:** `migrate/own-backend`  
 **Atualizado:** 2026-06-05
 
-## Feito nesta branch
+## Feito
 
-- [x] Docs em `docs/migracao/`
-- [x] `services/_base` com switch `VITE_DATA_BACKEND` (padrão: `base44`)
-- [x] `server/index.ts` — `/api/chat` + health
-- [x] `src/lib/firebase.js` + `JotaAIChat` (só aparece com Firebase configurado)
-- [x] `firestore.rules` esboço MVP
-- [x] Repo **Jota-Fit-Pro** arquivado no GitHub
+- [x] Docs `docs/migracao/`
+- [x] Switch `VITE_USE_FIREBASE_DATA` — dados Firestore, **auth Base44** (híbrido)
+- [x] `firestoreEntity.js` — CRUD para todas entidades (interface Base44)
+- [x] `server/index.ts` — `/api/chat` + `npm run dev:own`
+- [x] `JotaAIChat` opcional
+- [x] Seed MVP: `scripts/seed-data.mvp.json` + `scripts/seed-firebase-mvp.mjs`
+- [x] `StudentLayout` usa `useMyProfile` (services, não Base44 direto)
+- [x] Jota-Fit-Pro arquivado
 
-## Ainda não feito (projeto pausado)
+## Testar Firebase (quando quiser)
 
-- [ ] Implementar `firebaseClient` para entidades Fase 0
-- [ ] `VITE_DATA_BACKEND=firebase` em produção
-- [ ] Remover pasta `base44/`
-- [ ] Deletar repo Pro (já arquivado)
+1. Projeto Firebase `jota-fitnessapp` (ou outro) + Auth email/senha ou Google
+2. `.env.local`:
+   ```
+   VITE_USE_FIREBASE_DATA=true
+   VITE_FIREBASE_*=...
+   VITE_BASE44_*=...   # auth ainda precisa
+   ```
+3. Deploy rules: `firebase deploy --only firestore:rules`
+4. Seed: service account + `node scripts/seed-firebase-mvp.mjs`
+5. Login Base44 com email que exista no Firestore **ou** alinhar emails do seed
 
-## Como rodar hoje (sem quebrar nada)
+## Próximo (pausado)
+
+- [ ] Auth Firebase (trocar `AuthContext` + `authService`)
+- [ ] Tela rotina 100% validada em Firebase
+- [ ] Cortar Base44
+
+## Rodar hoje (nada muda)
 
 ```bash
-npm install
-cp .env.example .env.local
-# preencher VITE_BASE44_* como antes
 npm run dev
+# VITE_USE_FIREBASE_DATA não definido ou false
 ```
-
-## Chat IA (opcional)
-
-```bash
-# .env.local: VITE_ENABLE_JOTA_CHAT=true + vars Firebase + GEMINI_API_KEY
-npm run dev:own
-```
-
-## Próximo passo
-
-`docs/migracao/CHECKLIST-RETOMADA.md` → Sessão C

@@ -30,12 +30,13 @@ src/services/
    - **Hooks React Query** (ex: `useStudentRoutines(email)`) — açúcar opcional para as telas.
 4. Mutations atualizam o cache via `invalidateQueries`.
 
-## Migração futura
+## Migração (em andamento na branch `migrate/own-backend`)
 
-Para trocar Base44 por outro backend:
-1. Reescrever só `services/_base/baseClient.js` + `services/_base/mappers.js`.
-2. Garantir que cada service mantém a mesma assinatura pública.
-3. Páginas e componentes não mudam.
+**Híbrido MVP:** `VITE_USE_FIREBASE_DATA=true` → dados no Firestore via `firestoreEntity.js`; login ainda Base44.
+
+1. `baseClient.js` escolhe implementação de `db`.
+2. `mappers.js` inalterado.
+3. Páginas usam só services (nunca `@/api/base44Client` direto).
 
 ## Tipos
 
