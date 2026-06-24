@@ -11,6 +11,7 @@ export * as workoutService from './workoutService';
 export * as progressService from './progressService';
 export * as recommendationService from './recommendationService';
 export * as consultantService from './consultantService';
+export * as pplHybridService from './pplHybridService';
 
 // Re-export hooks individualmente também (mais ergonômico)
 export { useCurrentUser } from './authService';
@@ -32,3 +33,4 @@ export {
   useTodayCheckin, useStudentMeasurements, useLevelConfigs, useRegisterCheckin,
 } from './progressService';
 export { useConsultantNotes, useCreateNote } from './consultantService';
+export { useInstallPplHybrid } from './pplHybridService';

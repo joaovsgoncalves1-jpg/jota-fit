@@ -9,7 +9,9 @@ import {
   useStudentRoutines, useAllRoutineExercises,
   useExercises,
   useDeleteRoutine, useSetActiveRoutine,
+  useInstallPplHybrid,
 } from '@/services';
+import { getTodayScheduleEntry, routineNameForSlot } from '@/lib/workoutProgram';
 
 const DAYS_LABEL = { seg: 'Seg', ter: 'Ter', qua: 'Qua', qui: 'Qui', sex: 'Sex', sab: 'Sáb', dom: 'Dom' };
 const BAND_LABEL = { leve: 'Leve', medio: 'Médio', forte: 'Forte', muito_forte: 'Muito forte' };
@@ -30,6 +32,9 @@ export default function MinhaRotina() {
   const { data: exercises } = useExercises();
   const deleteMutation = useDeleteRoutine();
   const setActiveMutation = useSetActiveRoutine();
+  const installPplMutation = useInstallPplHybrid();
+  const scheduleToday = getTodayScheduleEntry();
+  const todayRoutineHint = scheduleToday.slot ? routineNameForSlot(scheduleToday.slot) : null;
 
   // Sort: active first, then Jota routines, then others
   const sorted = [...(routines || [])].sort((a, b) => {
@@ -45,13 +50,35 @@ export default function MinhaRotina() {
       <div className="px-4 pt-4 pb-3 flex items-center justify-between">
         <div>
           <h1 className="font-display text-xl font-black">MINHA ROTINA</h1>
-          <p className="text-xs text-muted-foreground">{(routines || []).length} rotinas</p>
+          <p className="text-xs text-muted-foreground">
+            {(routines || []).length} rotinas
+            {scheduleToday.rest ? ' · hoje: descanso' : todayRoutineHint ? ` · hoje: ${scheduleToday.label}` : ''}
+          </p>
         </div>
         <button
           onClick={() => { setEditingRoutine(null); setShowForm(true); }}
           className="flex items-center gap-2 bg-primary text-primary-foreground text-xs font-bold px-3 py-2 rounded-xl hover:bg-primary/90 transition-all"
         >
           <Plus className="w-4 h-4" /> Nova Rotina
+        </button>
+      </div>
+
+      <div className="px-4 mb-4">
+        <button
+          type="button"
+          disabled={installPplMutation.isPending}
+          onClick={() => user?.email && installPplMutation.mutate(user.email)}
+          className="w-full text-left bg-primary/10 border border-primary/30 rounded-2xl px-4 py-3 hover:bg-primary/15 transition-colors"
+        >
+          <p className="text-sm font-bold text-primary">PPL Híbrido 2x + Perna 1x</p>
+          <p className="text-[11px] text-muted-foreground mt-1">
+            Cria Push/Pull/Pernas na semana (descanso sáb/dom). Falta exercício? Monta na Biblioteca e adiciona na rotina.
+          </p>
+          {installPplMutation.isSuccess && (
+            <p className="text-[11px] text-success mt-2 font-medium">
+              {installPplMutation.data?.skipped ? 'Já estava instalado.' : 'Rotinas criadas — edita como quiser.'}
+            </p>
+          )}
         </button>
       </div>
 
